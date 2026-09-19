@@ -1,0 +1,722 @@
+{
+  "id": "17792456-307b-4e9c-8ed4-19ea6d795b5d",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.distribution_logs": {
+      "name": "distribution_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "reservist_id": {
+          "name": "reservist_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inventory_item_id": {
+          "name": "inventory_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "serialized_item_id": {
+          "name": "serialized_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action_type": {
+          "name": "action_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_distribution_logs_reservist_created": {
+          "name": "idx_distribution_logs_reservist_created",
+          "columns": [
+            {
+              "expression": "reservist_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "distribution_logs_reservist_id_reservists_id_fk": {
+          "name": "distribution_logs_reservist_id_reservists_id_fk",
+          "tableFrom": "distribution_logs",
+          "tableTo": "reservists",
+          "columnsFrom": [
+            "reservist_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "distribution_logs_inventory_item_id_inventory_items_id_fk": {
+          "name": "distribution_logs_inventory_item_id_inventory_items_id_fk",
+          "tableFrom": "distribution_logs",
+          "tableTo": "inventory_items",
+          "columnsFrom": [
+            "inventory_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "distribution_logs_serialized_item_id_serialized_items_id_fk": {
+          "name": "distribution_logs_serialized_item_id_serialized_items_id_fk",
+          "tableFrom": "distribution_logs",
+          "tableTo": "serialized_items",
+          "columnsFrom": [
+            "serialized_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "distribution_action_check": {
+          "name": "distribution_action_check",
+          "value": "\"distribution_logs\".\"action_type\" IN ('ISSUE', 'RETURN')"
+        },
+        "distribution_logs_target_check": {
+          "name": "distribution_logs_target_check",
+          "value": "(\"distribution_logs\".\"inventory_item_id\" IS NOT NULL AND \"distribution_logs\".\"serialized_item_id\" IS NULL AND \"distribution_logs\".\"quantity\" IS NOT NULL AND \"distribution_logs\".\"quantity\" > 0)\n          OR (\"distribution_logs\".\"inventory_item_id\" IS NULL AND \"distribution_logs\".\"serialized_item_id\" IS NOT NULL AND \"distribution_logs\".\"quantity\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.gear_categories": {
+      "name": "gear_categories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tracking_type": {
+          "name": "tracking_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "max_per_reservist": {
+          "name": "max_per_reservist",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requires_size": {
+          "name": "requires_size",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "gear_categories_name_unique": {
+          "name": "gear_categories_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "gear_tracking_type_check": {
+          "name": "gear_tracking_type_check",
+          "value": "\"gear_categories\".\"tracking_type\" IN ('BULK', 'SERIALIZED')"
+        },
+        "gear_max_per_reservist_positive": {
+          "name": "gear_max_per_reservist_positive",
+          "value": "\"gear_categories\".\"max_per_reservist\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reservists": {
+      "name": "reservists",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "national_id": {
+          "name": "national_id",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "military_rank": {
+          "name": "military_rank",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checked_in_at": {
+          "name": "checked_in_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "reservists_national_id_unique": {
+          "name": "reservists_national_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "national_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "reservists_national_id_format": {
+          "name": "reservists_national_id_format",
+          "value": "\"reservists\".\"national_id\" ~ '^[A-Z][0-9A-D][0-9]{8}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.inventory_items": {
+      "name": "inventory_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stock_quantity": {
+          "name": "stock_quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "inventory_items_category_id_gear_categories_id_fk": {
+          "name": "inventory_items_category_id_gear_categories_id_fk",
+          "tableFrom": "inventory_items",
+          "tableTo": "gear_categories",
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "inventory_items_category_size_key": {
+          "name": "inventory_items_category_size_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "category_id",
+            "size"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "stock_non_negative": {
+          "name": "stock_non_negative",
+          "value": "\"inventory_items\".\"stock_quantity\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.serialized_items": {
+      "name": "serialized_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "serial_number": {
+          "name": "serial_number",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'AVAILABLE'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_serialized_category_status_size": {
+          "name": "idx_serialized_category_status_size",
+          "columns": [
+            {
+              "expression": "category_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "size",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "serialized_items_category_id_gear_categories_id_fk": {
+          "name": "serialized_items_category_id_gear_categories_id_fk",
+          "tableFrom": "serialized_items",
+          "tableTo": "gear_categories",
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "serialized_items_serial_number_unique": {
+          "name": "serialized_items_serial_number_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "serial_number"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "serialized_item_status_check": {
+          "name": "serialized_item_status_check",
+          "value": "\"serialized_items\".\"status\" IN ('AVAILABLE', 'ISSUED', 'MAINTENANCE', 'LOST')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reservist_bulk_gear": {
+      "name": "reservist_bulk_gear",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "reservist_id": {
+          "name": "reservist_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inventory_item_id": {
+          "name": "inventory_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "issued_at": {
+          "name": "issued_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_bulk_gear_reservist": {
+          "name": "idx_bulk_gear_reservist",
+          "columns": [
+            {
+              "expression": "reservist_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_bulk_gear_inventory_item": {
+          "name": "idx_bulk_gear_inventory_item",
+          "columns": [
+            {
+              "expression": "inventory_item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "reservist_bulk_gear_reservist_id_reservists_id_fk": {
+          "name": "reservist_bulk_gear_reservist_id_reservists_id_fk",
+          "tableFrom": "reservist_bulk_gear",
+          "tableTo": "reservists",
+          "columnsFrom": [
+            "reservist_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "reservist_bulk_gear_inventory_item_id_inventory_items_id_fk": {
+          "name": "reservist_bulk_gear_inventory_item_id_inventory_items_id_fk",
+          "tableFrom": "reservist_bulk_gear",
+          "tableTo": "inventory_items",
+          "columnsFrom": [
+            "inventory_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "reservist_bulk_gear_unique": {
+          "name": "reservist_bulk_gear_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "reservist_id",
+            "inventory_item_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "positive_quantity": {
+          "name": "positive_quantity",
+          "value": "\"reservist_bulk_gear\".\"quantity\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reservist_serialized_gear": {
+      "name": "reservist_serialized_gear",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "reservist_id": {
+          "name": "reservist_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "serialized_item_id": {
+          "name": "serialized_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "issued_at": {
+          "name": "issued_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "returned_at": {
+          "name": "returned_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_serialized_gear_reservist": {
+          "name": "idx_serialized_gear_reservist",
+          "columns": [
+            {
+              "expression": "reservist_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_active_serialized_item": {
+          "name": "uq_active_serialized_item",
+          "columns": [
+            {
+              "expression": "serialized_item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"reservist_serialized_gear\".\"returned_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_serialized_gear_open_by_reservist": {
+          "name": "idx_serialized_gear_open_by_reservist",
+          "columns": [
+            {
+              "expression": "reservist_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "serialized_item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"reservist_serialized_gear\".\"returned_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "reservist_serialized_gear_reservist_id_reservists_id_fk": {
+          "name": "reservist_serialized_gear_reservist_id_reservists_id_fk",
+          "tableFrom": "reservist_serialized_gear",
+          "tableTo": "reservists",
+          "columnsFrom": [
+            "reservist_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "reservist_serialized_gear_serialized_item_id_serialized_items_id_fk": {
+          "name": "reservist_serialized_gear_serialized_item_id_serialized_items_id_fk",
+          "tableFrom": "reservist_serialized_gear",
+          "tableTo": "serialized_items",
+          "columnsFrom": [
+            "serialized_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "returned_after_issued": {
+          "name": "returned_after_issued",
+          "value": "\"reservist_serialized_gear\".\"returned_at\" IS NULL OR \"reservist_serialized_gear\".\"returned_at\" >= \"reservist_serialized_gear\".\"issued_at\""
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
