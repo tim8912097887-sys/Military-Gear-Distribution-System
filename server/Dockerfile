@@ -37,6 +37,7 @@ USER node
 # Change ownership before copy
 COPY --from=pro_dep --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./
+COPY --chown=node:node drizzle ./drizzle
 
 EXPOSE 3000
 CMD ["node","server.js"]

@@ -20,6 +20,13 @@ const EnvSchema = z.object({
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug'], {
     error: "Log level must be 'error','warn','info','debug'",
   }),
+  DATABASE_URL: z
+    .string({
+      error: 'DATABASE_URL must be a string',
+    })
+    .regex(
+      /^postgres(?:ql)?:\/\/(?:[^:@/\s]+(?::[^@/\s]*)?@)?[^:/\s?#]+(?::\d{1,5})?\/[^\s?#]+(?:\?[^\s#]*)?$/,
+    ),
 });
 
 const result = EnvSchema.safeParse(process.env);

@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint ./src",
-    "lint:fix": "eslint ./src --fix"
+    "lint:fix": "eslint ./src --fix",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +21,8 @@
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
     "@types/node": "^26.6.2",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^10.11.0",
     "prettier": "^3.9.8",
     "ts-node": "^10.9.2",
@@ -27,8 +31,11 @@
   },
   "dependencies": {
     "cors": "^2.8.6",
+    "dotenv": "^18.0.1",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "morgan": "^1.12.1",
+    "pg": "^8.23.0",
     "winston": "^3.19.0",
     "zod": "^4.6.5"
   }

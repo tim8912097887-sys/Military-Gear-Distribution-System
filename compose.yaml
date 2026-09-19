@@ -1,0 +1,44 @@
+services:
+  server_migrations:
+    build: ./server
+    container_name: server_migrations
+    # Overwrite the default start command with your migration script
+    command: node infrastructure/db/migrate.js
+    env_file:
+      - ./server/.env
+    depends_on:
+      db:
+        condition: service_healthy
+  server:
+    build: ./server
+    container_name: server
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./server/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      server_migrations:
+        condition: service_completed_successfully
+  db:
+    image: postgres:16-alpine
+    container_name: db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: military_gear_distribution
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U postgres -d military_gear_distribution"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  db_data:
