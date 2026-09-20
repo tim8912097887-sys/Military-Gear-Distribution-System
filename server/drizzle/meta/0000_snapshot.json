@@ -1,5 +1,5 @@
 {
-  "id": "17792456-307b-4e9c-8ed4-19ea6d795b5d",
+  "id": "3958b221-1bdc-4198-84ac-6259255f0a3c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -234,7 +234,7 @@
           "name": "military_rank",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "checked_in_at": {
           "name": "checked_in_at",

@@ -7,7 +7,7 @@ export const reservists = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     nationalId: varchar('national_id', { length: 10 }).notNull().unique(),
     name: varchar('name', { length: 100 }).notNull(),
-    militaryRank: varchar('military_rank', { length: 50 }),
+    militaryRank: varchar('military_rank', { length: 50 }).notNull(),
     checkedInAt: timestamp('checked_in_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
