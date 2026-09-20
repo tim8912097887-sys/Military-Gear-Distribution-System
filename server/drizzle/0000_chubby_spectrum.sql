@@ -28,7 +28,7 @@ CREATE TABLE "reservists" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"national_id" varchar(10) NOT NULL,
 	"name" varchar(100) NOT NULL,
-	"military_rank" varchar(50),
+	"military_rank" varchar(50) NOT NULL,
 	"checked_in_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "reservists_national_id_unique" UNIQUE("national_id"),
