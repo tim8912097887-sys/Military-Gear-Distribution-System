@@ -7,6 +7,7 @@ import { notFoundHandler } from './middlewares/notfound-handler.js';
 import { SUCCESS_STATUS } from './utils/response/constants.js';
 import { successResponse } from './utils/response/success.js';
 import { reservistRouter } from './domains/reservists/container/container.js';
+import { gearRouter } from './domains/gears/container/container.js';
 
 export const initializeApp = (): express.Application => {
   const app = express();
@@ -31,6 +32,7 @@ export const initializeApp = (): express.Application => {
   // Routes
   const v1Router = Router();
   v1Router.use('/reservists', reservistRouter);
+  v1Router.use('/gears', gearRouter);
   app.use('/api/v1', v1Router);
 
   // Error Handler

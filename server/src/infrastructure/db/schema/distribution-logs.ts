@@ -20,7 +20,6 @@ export const distributionLogs = pgTable(
     }),
     actionType: varchar('action_type', { length: 20 }).$type<ActionType>().notNull(),
     quantity: integer('quantity'),
-    requestId: uuid('request_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
