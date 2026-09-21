@@ -3,6 +3,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import { logger } from '../../configs/logger/index.js';
 import { env } from '../../configs/env/index.js';
+import { sql } from 'drizzle-orm';
 
 const pool = new Pool({
   connectionString: env.DATABASE_URL,
@@ -17,6 +18,97 @@ async function main() {
   await migrate(db, { migrationsFolder: './drizzle' });
 
   logger.info('Migrations completed!');
+
+  logger.info('Seeding initial data...');
+
+  // Execute Seed SQL
+  await db.execute(sql`
+    INSERT INTO "reservists" ("national_id", "name", "military_rank", "checked_in_at") VALUES
+    ('A123456789', 'Chen Wei-Ting', 'Sergeant', '2026-09-20 08:15:00+08'),
+    ('B198765432', 'Lin Yu-Hsiang', 'Private First Class', NULL),
+    ('C234567890', 'Huang Chih-Ming', 'Corporal', '2026-09-20 08:22:10+08'),
+    ('D112233445', 'Zhang Chia-Hao', 'Lieutenant', '2026-09-20 08:30:00+08'),
+    ('E223344556', 'Lee Shu-Fen', 'Sergeant First Class', NULL),
+    ('F135792468', 'Wang Po-Yu', 'Private First Class', '2026-09-20 08:45:12+08'),
+    ('G246801357', 'Wu Pei-Chen', 'Master Sergeant', NULL),
+    ('H101010101', 'Liu Guan-Yu', 'Captain', '2026-09-20 09:01:00+08'),
+    ('I212121212', 'Yang Ya-Ting', 'Corporal', NULL),
+    ('J131313131', 'Tsai Cheng-Han', 'Private First Class', '2026-09-20 09:15:45+08'),
+    ('K242424242', 'Hsu Mei-Ling', 'Sergeant', NULL),
+    ('L151515151', 'Cheng Yu-Lun', 'Corporal', '2026-09-20 09:20:00+08'),
+    ('M262626262', 'Lu Hsiao-Ching', 'Staff Sergeant', NULL),
+    ('N171717171', 'Hsieh Chun-Chieh', 'Private First Class', '2026-09-20 09:33:18+08'),
+    ('O282828282', 'Kuo Li-Hua', 'Sergeant', NULL),
+    ('P191919191', 'Chiu Sheng-Wei', 'Second Lieutenant', '2026-09-20 09:40:00+08'),
+    ('Q202020202', 'Tseng Szu-Ying', 'Private First Class', NULL),
+    ('R111222333', 'Liao Hsin-Ying', 'Corporal', '2026-09-20 09:55:02+08'),
+    ('S222333444', 'Lai Ting-Yu', 'Sergeant First Class', NULL),
+    ('T133444555', 'Yeh Kai-Wen', 'Private First Class', '2026-09-20 10:02:40+08'),
+    ('U244555666', 'Chang Min-Ting', 'Master Sergeant', NULL),
+    ('V155666777', 'Chou Tzu-Hao', 'Corporal', '2026-09-20 10:10:15+08'),
+    ('W266777888', 'Ho Yu-Chen', 'Private First Class', NULL),
+    ('X177888999', 'Lo Meng-Hsuan', 'Sergeant', '2026-09-20 10:18:00+08'),
+    ('Y288999000', 'Chiang Wan-Ju', 'Staff Sergeant', NULL),
+    ('Z199000111', 'Fan Chih-Wei', 'Captain', '2026-09-20 10:25:30+08'),
+    ('A200111222', 'Hsiao Ru-Yun', 'Private First Class', NULL),
+    ('B111333555', 'Su Bo-Chun', 'Corporal', '2026-09-20 10:30:11+08'),
+    ('C222444666', 'Pan Hsiu-Ying', 'Sergeant', NULL),
+    ('D133555777', 'Tu Yi-Chen', 'Private First Class', '2026-09-20 10:35:42+08'),
+    ('E244666888', 'Teng Ching-Ying', 'Second Lieutenant', NULL),
+    ('F155777999', 'Peng Tzu-Chieh', 'Corporal', '2026-09-20 10:41:00+08'),
+    ('G266888000', 'Fang Ya-Chun', 'Staff Sergeant', NULL),
+    ('H177999111', 'Kan Wei-Lun', 'Private First Class', '2026-09-20 10:48:22+08'),
+    ('I288000222', 'Tien Hsin-Yi', 'Sergeant', NULL),
+    ('J199111333', 'Tu Meng-Che', 'Corporal', '2026-09-20 10:52:10+08'),
+    ('K200222444', 'Tsai Chia-Ling', 'Private First Class', NULL),
+    ('L111444777', 'Ying Yu-Kai', 'Sergeant First Class', '2026-09-20 11:00:00+08'),
+    ('M222555888', 'Tang Pei-Shan', 'Private First Class', NULL),
+    ('N133666999', 'Wen Guan-Lin', 'Corporal', '2026-09-20 11:05:19+08'),
+    ('O244777000', 'Liang Shu-Ting', 'Sergeant', NULL),
+    ('P155888111', 'Shih Yu-Xiang', 'First Lieutenant', '2026-09-20 11:12:00+08'),
+    ('Q266999222', 'Mo Chih-Ching', 'Private First Class', NULL),
+    ('R177000333', 'Yu Cheng-Hsien', 'Corporal', '2026-09-20 11:20:45+08'),
+    ('S288111444', 'Niu Yi-Jing', 'Sergeant', NULL),
+    ('T199222555', 'Chuang Che-Wei', 'Private First Class', '2026-09-20 11:28:00+08'),
+    ('U200333666', 'Chung Ya-Hsuan', 'Staff Sergeant', NULL),
+    ('V111555999', 'Liao Chun-Hung', 'Corporal', '2026-09-20 11:35:10+08'),
+    ('W222666000', 'Sheng Chen-Hsi', 'Private First Class', NULL),
+    ('X133777111', 'Hsiao Kai-Xiang', 'Sergeant', '2026-09-20 11:42:05+08')
+    ON CONFLICT DO NOTHING;
+
+    WITH inserted_categories AS (
+      INSERT INTO "gear_categories" ("name", "tracking_type", "max_per_reservist", "requires_size")
+      VALUES 
+        ('Tactical Helmet', 'SERIALIZED', 1, true),
+        ('Bulletproof Vest', 'SERIALIZED', 1, true),
+        ('Camouflage Uniform shirt', 'BULK', 3, true),
+        ('Camouflage Uniform pant', 'BULK', 3, true)
+      ON CONFLICT DO NOTHING
+      RETURNING "id", "name"
+    ),
+    inserted_inventory AS (
+      INSERT INTO "inventory_items" ("category_id", "size", "stock_quantity")
+      SELECT 
+        c."id", 
+        s.size, 
+        100
+      FROM inserted_categories c
+      CROSS JOIN (VALUES ('S'), ('M'), ('L'), ('XL')) AS s(size)
+      WHERE c."name" IN ('Camouflage Uniform shirt', 'Camouflage Uniform pant')
+    )
+    INSERT INTO "serialized_items" ("category_id", "size", "serial_number", "status")
+    SELECT 
+      c."id", 
+      s.size, 
+      UPPER(LEFT(SPLIT_PART(c."name", ' ', 1), 6)) || '-' || s.size || '-' || LPAD(seq.n::text, 3, '0'),
+      'AVAILABLE'
+    FROM inserted_categories c
+    CROSS JOIN (VALUES ('S'), ('M'), ('L'), ('XL')) AS s(size)
+    CROSS JOIN (VALUES (1), (2), (3)) AS seq(n)
+    WHERE c."name" IN ('Tactical Helmet', 'Bulletproof Vest');
+  `);
+
+  logger.info('Seeding completed successfully!');
   await pool.end();
   process.exit(0);
 }

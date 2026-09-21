@@ -11,7 +11,7 @@ export function createGearRouter(controller: GearController): Router {
 
   router.get('/reservists/:reservistId', controller.getGearForReservist);
   router.post('/reservists/:reservistId/issue', controller.issue);
-  // router.post('/return', controller.returnGear);
+  router.post('/reservists/:reservistId/return', controller.returnGear);
 
   return router;
 }
