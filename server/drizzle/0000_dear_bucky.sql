@@ -5,7 +5,6 @@ CREATE TABLE "distribution_logs" (
 	"serialized_item_id" uuid,
 	"action_type" varchar(20) NOT NULL,
 	"quantity" integer,
-	"request_id" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "distribution_action_check" CHECK ("distribution_logs"."action_type" IN ('ISSUE', 'RETURN')),
 	CONSTRAINT "distribution_logs_target_check" CHECK (("distribution_logs"."inventory_item_id" IS NOT NULL AND "distribution_logs"."serialized_item_id" IS NULL AND "distribution_logs"."quantity" IS NOT NULL AND "distribution_logs"."quantity" > 0)

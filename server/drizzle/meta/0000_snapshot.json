@@ -1,5 +1,5 @@
 {
-  "id": "3958b221-1bdc-4198-84ac-6259255f0a3c",
+  "id": "2dce1dac-7e04-422f-a826-a31a0bd70aec",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -42,12 +42,6 @@
         "quantity": {
           "name": "quantity",
           "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "request_id": {
-          "name": "request_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
