@@ -78,15 +78,10 @@ const serializedIssueLineSchema = z.object({
 export const RETURN_CONDITIONS = ['SERVICEABLE', 'DAMAGED', 'LOST'] as const;
 export type ReturnCondition = (typeof RETURN_CONDITIONS)[number];
 
-const serializedReturnLineSchema = z
-  .object({
-    serializedItemId: z.uuid().optional(),
-    serialNumber: z.string().trim().min(1).max(100).optional(),
-    condition: z.enum(RETURN_CONDITIONS).default('SERVICEABLE'),
-  })
-  .refine((v) => Boolean(v.serializedItemId) || Boolean(v.serialNumber), {
-    message: 'Provide serializedItemId or serialNumber',
-  });
+const serializedReturnLineSchema = z.object({
+  serialNumber: z.string().trim().min(1).max(100),
+  condition: z.enum(RETURN_CONDITIONS).default('SERVICEABLE'),
+});
 
 const nonEmptyPayload = <T extends { bulk?: unknown[]; serialized?: unknown[] }>(v: T) =>
   (v.bulk?.length ?? 0) + (v.serialized?.length ?? 0) > 0;

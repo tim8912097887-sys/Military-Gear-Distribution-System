@@ -8,8 +8,10 @@ import {
 import {
   getGearQuerySchema,
   issueGearBodySchema,
+  returnGearBodySchema,
   type GetGearQuery,
   type IssueGearBody,
+  type ReturnGearBody,
 } from '../service/dto.js';
 import { NotFoundError } from '../../../applications/error/not-found.js';
 import { ReservistNotFoundError } from '../../reservists/errors/reservist-not-found.js';
@@ -20,6 +22,7 @@ import { CategoryNotFoundError } from '../errors/category-not-found.js';
 import { CustodyCreationError } from '../errors/custody-creation.js';
 import { InsufficientStockError } from '../errors/insufficient-stock.js';
 import { SerializedItemNotFoundError } from '../errors/serialized-item-not-found.js';
+import { InsufficientHoldingError } from '../errors/insufficient-holding.js';
 
 export class GearController {
   constructor(private readonly gearService: GearService) {}
@@ -55,12 +58,20 @@ export class GearController {
     }
   };
 
-  // returnGear = async (req: Request, res: Response): Promise<void> => {
-  //   const { reservistId } = parseParams(reservistIdParamsSchema, req.params);
-  //   const body = parseBody(returnGearBodySchema, req.body);
-  //   const { data, replayed } = await this.gearService.returnGear(reservistId, body);
-  //   res.status(200).json({ data, meta: { replayed } });
-  // };
+  returnGear = async (req: Request, res: Response): Promise<void> => {
+    const id = req.params.reservistId as string;
+    const { reservistId } = schemaValidator<ReservistIdParams>(reservistIdParamsSchema)({
+      reservistId: id,
+    });
+    const body = schemaValidator<ReturnGearBody>(returnGearBodySchema)(req.body);
+
+    try {
+      const { data } = await this.gearService.returnGear(reservistId, body);
+      this.successJson(res, data);
+    } catch (error) {
+      this.handleError(error);
+    }
+  };
 
   private handleError(error: unknown): void {
     if (error instanceof ReservistNotFoundError) {
@@ -77,6 +88,10 @@ export class GearController {
       throw new ServerConflictError(error.message);
     } else if (error instanceof SerializedItemNotFoundError) {
       throw new NotFoundError(error.message);
+    } else if (error instanceof InsufficientHoldingError) {
+      throw new ServerConflictError(error.message);
+    } else {
+      throw error;
     }
   }
 
