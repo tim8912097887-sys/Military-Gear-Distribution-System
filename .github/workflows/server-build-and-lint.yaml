@@ -1,0 +1,49 @@
+name: Server-Build-and-Lint
+on:
+  pull_request:
+    branches:
+      - main
+      - feat/server
+    paths:
+      - "server/**"
+      - ".github/workflows/server-build-and-lint.yaml"
+  push:
+    branches:
+      - feat/**
+    paths:
+      - "server/**"
+      - ".github/workflows/server-build-and-lint.yaml"
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' }}
+jobs:
+  build-and-lint-server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./server
+    strategy:
+      matrix:
+        node-version: [22, 24]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Install Pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.26.1
+          standalone: true
+      - name: Set up Node.js with version ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+          cache-dependency-path: "./server/pnpm-lock.yaml"
+      - name: Install Dependencies
+        run: pnpm install
+      - name: Run Build
+        run: pnpm run build
+      - name: Run Lint
+        run: pnpm run lint
