@@ -8,6 +8,10 @@ inputs:
   pnpm-version:
     required: true
     type: string
+  working-directory:
+    required: false
+    type: string
+    default: "."
 
 runs:
   using: "composite"
@@ -22,7 +26,8 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         cache: pnpm
-        cache-dependency-path: "./server/pnpm-lock.yaml"
+        cache-dependency-path: "${{ inputs.working-directory }}/pnpm-lock.yaml"
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
