@@ -57,5 +57,7 @@ jobs:
           cache-dependency-path: "./server/pnpm-lock.yaml"
       - name: Install Dependencies
         run: pnpm install
+      - name: Run Migrations
+        run: pnpm db:migrate
       - name: Run Tests
         run: pnpm test
