@@ -13,6 +13,7 @@ import {
   type IssueGearBody,
   type ReturnGearBody,
 } from './dto.js';
+import { successResponse } from '../../../utils/response/success.js';
 
 export class GearController {
   constructor(private readonly gearService: GearService) {}
@@ -53,6 +54,6 @@ export class GearController {
   };
 
   private successJson<T>(res: Response, data: T): void {
-    res.status(200).json({ data });
+    res.status(200).json(successResponse(data));
   }
 }

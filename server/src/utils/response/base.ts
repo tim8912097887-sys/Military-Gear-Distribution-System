@@ -5,12 +5,10 @@ export type ErrorObject = {
   detail: string;
 };
 
-export type Data = null | any;
-
-export type SuccessResponse = {
+export type SuccessResponse<T> = {
   state: State;
   error: null;
-  data: Data;
+  data: T;
   meta: {
     timestamp: string;
   };

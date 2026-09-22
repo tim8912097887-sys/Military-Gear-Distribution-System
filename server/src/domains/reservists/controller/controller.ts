@@ -7,6 +7,7 @@ import {
   type ListReservistsQuery,
   type ReservistIdParams,
 } from './dto.js';
+import { successResponse } from '../../../utils/response/success.js';
 
 export class ReservistController {
   constructor(private readonly reservistService: ReservistService) {}
@@ -42,6 +43,6 @@ export class ReservistController {
   };
 
   private successJson<T>(res: Response, data: T): void {
-    res.status(200).json({ data });
+    res.status(200).json(successResponse(data));
   }
 }
