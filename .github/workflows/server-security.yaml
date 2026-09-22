@@ -1,0 +1,31 @@
+name: Server-Security
+on:
+  pull_request:
+    branches:
+      - main
+      - feat/server
+    paths:
+      - "server/**"
+      - ".github/workflows/server-security.yaml"
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' }}
+jobs:
+  build-and-lint-server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./server
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Initialize Environment
+        uses: ./.github/actions/setup-node-and-dependency
+        with:
+          node-version: 22
+          pnpm-version: 10.26.1
+          working-directory: ./server
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=moderate
