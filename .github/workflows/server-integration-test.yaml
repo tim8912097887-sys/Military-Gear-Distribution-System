@@ -46,6 +46,7 @@ jobs:
         with:
           node-version: 22
           pnpm-version: 10.26.1
+          working-directory: ./server
       - name: Run Migrations
         run: pnpm db:migrate
       - name: Run Tests
