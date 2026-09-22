@@ -1,14 +1,13 @@
 import type { Reservist } from '../../../infrastructure/db/schema/reservists.js';
 import { CheckInConflictError } from '../errors/check-in-conflict.js';
 import { ReservistNotFoundError } from '../errors/reservist-not-found.js';
-import type { ListReservistsQuery } from '../repository/dto.js';
 import type { ReservistRepository } from '../repository/repository.js';
-import type { ListReservistsResponse, ReservistView } from './dto.js';
+import type { ListReservistsServiceInput, ListReservistsResponse, ReservistView } from './dto.js';
 
 export class ReservistService {
   constructor(private readonly reservistRepository: ReservistRepository) {}
 
-  async list(query: ListReservistsQuery): Promise<ListReservistsResponse> {
+  async list(query: ListReservistsServiceInput): Promise<ListReservistsResponse> {
     const { rows, total } = await this.reservistRepository.list(query);
     return {
       reservists: rows.map((r) => this.toView(r)),
@@ -25,18 +24,19 @@ export class ReservistService {
   }
 
   async checkIn(reservistId: string): Promise<ReservistView> {
-    const existingReservist = await this.reservistRepository.findById(reservistId);
-    if (!existingReservist) {
-      throw new ReservistNotFoundError(reservistId);
-    }
-    if (existingReservist.checkedInAt) {
+    const reservist = await this.reservistRepository.setCheckedIn(reservistId);
+
+    if (!reservist) {
+      const exists = await this.reservistRepository.findById(reservistId);
+
+      if (!exists) {
+        throw new ReservistNotFoundError(reservistId);
+      }
+
       throw new CheckInConflictError(reservistId);
     }
-    const checkedInReservist = await this.reservistRepository.setCheckedIn(reservistId);
-    if (!checkedInReservist) {
-      throw new CheckInConflictError(reservistId);
-    }
-    return this.toView(checkedInReservist);
+
+    return this.toView(reservist);
   }
 
   private toView(r: Reservist): ReservistView {

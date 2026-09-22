@@ -12,17 +12,7 @@ import {
   type GetGearQuery,
   type IssueGearBody,
   type ReturnGearBody,
-} from '../service/dto.js';
-import { NotFoundError } from '../../../applications/error/not-found.js';
-import { ReservistNotFoundError } from '../../reservists/errors/reservist-not-found.js';
-import { AllowanceExceededError } from '../errors/allowance-exceeded.js';
-import { ServerConflictError } from '../../../applications/error/server-conflict.js';
-import { InventoryItemNotFoundError } from '../errors/inventory-item-not-found.js';
-import { CategoryNotFoundError } from '../errors/category-not-found.js';
-import { CustodyCreationError } from '../errors/custody-creation.js';
-import { InsufficientStockError } from '../errors/insufficient-stock.js';
-import { SerializedItemNotFoundError } from '../errors/serialized-item-not-found.js';
-import { InsufficientHoldingError } from '../errors/insufficient-holding.js';
+} from './dto.js';
 
 export class GearController {
   constructor(private readonly gearService: GearService) {}
@@ -36,12 +26,8 @@ export class GearController {
       req.query as unknown as GetGearQuery,
     );
 
-    try {
-      const data = await this.gearService.getGear(reservistId, query);
-      this.successJson(res, data);
-    } catch (error) {
-      this.handleError(error);
-    }
+    const data = await this.gearService.getGear(reservistId, query);
+    this.successJson(res, data);
   };
 
   issue = async (req: Request, res: Response): Promise<void> => {
@@ -50,12 +36,9 @@ export class GearController {
       reservistId: id,
     });
     const body = schemaValidator<IssueGearBody>(issueGearBodySchema)(req.body);
-    try {
-      const { data } = await this.gearService.issue(reservistId, body);
-      this.successJson(res, data);
-    } catch (error) {
-      this.handleError(error);
-    }
+
+    const { data } = await this.gearService.issue(reservistId, body);
+    this.successJson(res, data);
   };
 
   returnGear = async (req: Request, res: Response): Promise<void> => {
@@ -65,37 +48,11 @@ export class GearController {
     });
     const body = schemaValidator<ReturnGearBody>(returnGearBodySchema)(req.body);
 
-    try {
-      const { data } = await this.gearService.returnGear(reservistId, body);
-      this.successJson(res, data);
-    } catch (error) {
-      this.handleError(error);
-    }
+    const { data } = await this.gearService.returnGear(reservistId, body);
+    this.successJson(res, data);
   };
 
-  private handleError(error: unknown): void {
-    if (error instanceof ReservistNotFoundError) {
-      throw new NotFoundError(error.message);
-    } else if (error instanceof AllowanceExceededError) {
-      throw new ServerConflictError(error.message);
-    } else if (error instanceof InventoryItemNotFoundError) {
-      throw new NotFoundError(error.message);
-    } else if (error instanceof CategoryNotFoundError) {
-      throw new NotFoundError(error.message);
-    } else if (error instanceof CustodyCreationError) {
-      throw new ServerConflictError(error.message);
-    } else if (error instanceof InsufficientStockError) {
-      throw new ServerConflictError(error.message);
-    } else if (error instanceof SerializedItemNotFoundError) {
-      throw new NotFoundError(error.message);
-    } else if (error instanceof InsufficientHoldingError) {
-      throw new ServerConflictError(error.message);
-    } else {
-      throw error;
-    }
-  }
-
-  private successJson(res: Response, data: any): void {
+  private successJson<T>(res: Response, data: T): void {
     res.status(200).json({ data });
   }
 }

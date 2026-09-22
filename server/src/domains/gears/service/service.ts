@@ -1,7 +1,7 @@
 import { ReservistNotFoundError } from '../../reservists/errors/reservist-not-found.js';
 import type { ReservistRepository } from '../../reservists/repository/repository.js';
 import type { GearRepository } from '../repository/repository.js';
-import type { GetGearQuery, IssueGearBody, ReturnGearBody } from './dto.js';
+import type { GetGearInput, IssueGearInput, ReturnGearInput } from './dto.js';
 
 export class GearService {
   constructor(
@@ -13,7 +13,7 @@ export class GearService {
   // Reads
   // =====================================================================
 
-  async getGear(reservistId: string, query: GetGearQuery) {
+  async getGear(reservistId: string, query: GetGearInput) {
     const reservist = await this.reservistRepository.findById(reservistId);
     if (!reservist) {
       throw new ReservistNotFoundError(reservistId);
@@ -87,7 +87,7 @@ export class GearService {
   // Issue
   // =====================================================================
 
-  async issue(reservistId: string, body: IssueGearBody) {
+  async issue(reservistId: string, body: IssueGearInput) {
     const data = await this.gearRepository.issueGear(reservistId, body);
     if (!data) {
       throw new ReservistNotFoundError(reservistId);
@@ -95,7 +95,7 @@ export class GearService {
     return { data };
   }
 
-  async returnGear(reservistId: string, body: ReturnGearBody) {
+  async returnGear(reservistId: string, body: ReturnGearInput) {
     const data = await this.gearRepository.returnGear(reservistId, body);
     if (!data) {
       throw new ReservistNotFoundError(reservistId);
