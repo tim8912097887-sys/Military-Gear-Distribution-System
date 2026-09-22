@@ -13,10 +13,31 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' }}
 jobs:
   test-server:
+    environment:
+      name: gear-distribution-server
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      LOG_LEVEL: debug
+      NODE_ENV: test
     defaults:
       run:
         working-directory: ./server
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          POSTGRES_DB: military_gear_distribution_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d military_gear_distribution_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --health-start-period 10s
     strategy:
       matrix:
         node-version: [22, 24]
