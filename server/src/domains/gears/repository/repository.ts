@@ -17,13 +17,23 @@ import { reservistBulkGear } from '../../../infrastructure/db/schema/reservist-b
 import { reservistSerializedGear } from '../../../infrastructure/db/schema/reservist-serialized-gear.js';
 import { distributionLogs } from '../../../infrastructure/db/schema/distribution-logs.js';
 import { reservists } from '../../../infrastructure/db/schema/reservists.js';
-import type { HeldBulkRow, HeldSerializedRow, HistoryRow } from './dto.js';
 import type {
-  IssueGearBody,
+  HeldBulkRow,
+  HeldSerializedRow,
+  HistoryRow,
+  IssuedBulkResult,
+  IssuedSerializedResult,
   IssueGearResult,
-  ReturnGearBody,
+  ResolvedIssueBulk,
+  ResolvedIssueSerialized,
+  ResolvedReturnBulk,
+  ResolvedReturnSerialized,
+  ReturnedBulkResult,
+  ReturnedSerializedResult,
   ReturnGearResult,
-} from '../service/dto.js';
+  ValidatedIssueRequest,
+  ValidatedReturnRequest,
+} from './dto.js';
 import { InventoryItemNotFoundError } from '../errors/inventory-item-not-found.js';
 import { SerializedItemNotFoundError } from '../errors/serialized-item-not-found.js';
 import { CategoryNotFoundError } from '../errors/category-not-found.js';
@@ -31,6 +41,8 @@ import { AllowanceExceededError } from '../errors/allowance-exceeded.js';
 import { InsufficientStockError } from '../errors/insufficient-stock.js';
 import { CustodyCreationError } from '../errors/custody-creation.js';
 import { InsufficientHoldingError } from '../errors/insufficient-holding.js';
+import { CONDITION_TO_STATUS, type IssueGearInput, type ReturnGearInput } from '../service/dto.js';
+import { mergeBulkLines } from '../utils/gear-lines.js';
 
 type DatabaseExecutor =
   NodePgDatabase | NodePgTransaction<Record<string, never>, Record<string, never>>;
@@ -38,343 +50,363 @@ type DatabaseExecutor =
 export class GearRepository {
   constructor(private readonly db: DatabaseExecutor) {}
 
-  async issueGear(reservistId: string, body: IssueGearBody): Promise<IssueGearResult | undefined> {
+  async issueGear(reservistId: string, body: IssueGearInput): Promise<IssueGearResult | undefined> {
     return this.db.transaction(async (tx) => {
-      // Start transaction and lock the reservist
-      // Every gear issue operation for the same reservist must be serialized.
-      // The reservist row acts as the concurrency lock for allowance checking.
-      // Without this lock, two concurrent requests could both read the same
-      // current holding and both conclude that the reservist still has space under the category allowance.
       const repository = new GearRepository(tx);
+
       const reservist = await repository.lockReservist(reservistId);
 
-      // Returning undefined allows the service layer to translate this into
-      // the appropriate "reservist not found" response.
       if (!reservist) return undefined;
 
-      // Normalize request ordering
-      // Sorting does not change the business meaning of the request.
-      // It gives bulk and serialized operations a deterministic order, which
-      // is useful for predictable execution and reduces the chance of
-      // inconsistent lock ordering when multiple requests are processed concurrently.
-      const bulkLines = [...body.bulk].sort((a, b) =>
-        a.inventoryItemId.localeCompare(b.inventoryItemId),
-      );
-      const serializedLines = [...body.serialized].sort((a, b) =>
-        a.serialNumber.localeCompare(b.serialNumber),
-      );
+      // Resolve and validate the entire request.
+      const validated = await repository.validateIssueRequest(body);
 
-      // Resolve requested items and calculate requested quantity by category
-      // The allowance is defined at the CATEGORY level, not at the individual
-      // inventory-item level.
-      // Example:
-      // Camouflage Uniform shirt:
-      // Bulk item A = 1 (size s)
-      // Bulk item B = 1 (size m)
-      // Requested Camouflage Uniform shirt total = 2
-      // Therefore we first resolve every requested item and aggregate the
-      // requested quantity by category.
-      const requestedByCategory = new Map<string, number>();
+      // Check category allowances.
+      await repository.validateIssueAllowances(reservistId, validated);
 
-      // Resolve bulk items.
-      for (const line of bulkLines) {
-        const inventoryItem = await repository.findInventoryItemById(line.inventoryItemId);
-        if (!inventoryItem) {
-          throw new InventoryItemNotFoundError(line.inventoryItemId);
-        }
-        requestedByCategory.set(
-          inventoryItem.categoryId,
-          (requestedByCategory.get(inventoryItem.categoryId) ?? 0) + line.quantity,
-        );
+      // Perform mutations using the already-resolved entities.
+      const issued: IssueGearResult['issued'] = {
+        bulk: [],
+        serialized: [],
+      };
+
+      for (const resolved of validated.bulkLines) {
+        issued.bulk.push(await repository.issueBulk(reservistId, resolved));
       }
 
-      // Resolve serialized items.
-      // A serialized item represents exactly one physical piece of equipment,
-      // so every serialized line contributes 1 to the requested category quantity.
-      for (const line of serializedLines) {
-        const serializedItem = await repository.findSerializedItemBySerial(line.serialNumber);
-        if (!serializedItem) {
-          throw new SerializedItemNotFoundError(line.serialNumber);
-        }
-        requestedByCategory.set(
-          serializedItem.categoryId,
-          (requestedByCategory.get(serializedItem.categoryId) ?? 0) + 1,
-        );
+      for (const resolved of validated.serializedLines) {
+        issued.serialized.push(await repository.issueSerialized(reservistId, resolved));
       }
 
-      // Read current holdings and validate category allowance
-      // The reservist row is already locked, so these two queries are safe for
-      // allowance validation against concurrent issue/return operations for
-      // this reservist.
-      // We calculate bulk and serialized holdings separately because they are stored in different tables.
-      const [heldBulk, heldSerialized] = await Promise.all([
-        repository.sumBulkHeldByCategory(reservistId),
-        repository.countSerializedHeldByCategory(reservistId),
-      ]);
-
-      // Check every affected category:
-      // currently held + requested quantity <= category allowance
-      // This is intentionally performed BEFORE changing any inventory.
-      for (const [categoryId, requested] of requestedByCategory) {
-        const category = await repository.findCategoryById(categoryId);
-        if (!category) throw new CategoryNotFoundError(categoryId);
-
-        const held = (heldBulk.get(categoryId) ?? 0) + (heldSerialized.get(categoryId) ?? 0);
-        if (held + requested > category.maxPerReservist) {
-          throw new AllowanceExceededError(category.name, category.maxPerReservist);
-        }
-      }
-
-      // Prepare response
-      // Nothing has been mutated yet. From this point onward we perform the
-      // actual inventory/custody changes.
-      const issued: IssueGearResult['issued'] = { bulk: [], serialized: [] };
-
-      // Issue bulk inventory
-      for (const line of bulkLines) {
-        const inventoryItem = await repository.findInventoryItemById(line.inventoryItemId);
-        if (!inventoryItem) {
-          throw new InventoryItemNotFoundError(line.inventoryItemId);
-        }
-
-        const category = await repository.findCategoryById(inventoryItem.categoryId);
-        if (!category) {
-          throw new CategoryNotFoundError(inventoryItem.categoryId);
-        }
-
-        // Atomically decrease stock.
-        // decreaseStock() uses: WHERE stock_quantity >= requested_quantity
-        // so two concurrent issue requests cannot both successfully consume inventory that does not exist.
-        // If no row is returned, there was insufficient stock.
-        const stock = await repository.decreaseStock(line.inventoryItemId, line.quantity);
-        if (stock === undefined) {
-          throw new InsufficientStockError(line.inventoryItemId);
-        }
-
-        // Add the issued quantity to the reservist's bulk holding.
-        // If a holding for this reservist + inventory item already exists,
-        // addBulkHolding() increments it. Otherwise it creates a new holding.
-        const holding = await repository.addBulkHolding(
-          reservistId,
-          line.inventoryItemId,
-          line.quantity,
-        );
-
-        // Write an immutable audit record describing the issue operation.
-        await repository.writeBulkLog(reservistId, line.inventoryItemId, line.quantity);
-
-        issued.bulk.push({
-          inventoryItemId: line.inventoryItemId,
-          categoryId: category.id,
-          categoryName: category.name,
-          size: inventoryItem.size,
-          quantity: line.quantity,
-          remainingStock: stock,
-          totalHeld: holding,
-        });
-      }
-
-      // Issue serialized inventory
-      for (const line of serializedLines) {
-        // Lock the physical serialized item and verify that it is still AVAILABLE.
-        // This protects against two concurrent requests attempting to issue the same physical item.
-        const serializedItem = await repository.lockAvailableSerializedItem(line.serialNumber);
-        if (!serializedItem) {
-          throw new SerializedItemNotFoundError(line.serialNumber);
-        }
-
-        const category = await repository.findCategoryById(serializedItem.categoryId);
-        if (!category) {
-          throw new CategoryNotFoundError(serializedItem.categoryId);
-        }
-
-        await repository.markSerializedIssued(serializedItem.id);
-
-        // Create the custody record connecting the physical serialized item to this reservist.
-        // This record represents the current chain of custody and allows us to later identify exactly which reservist has the item.
-        const [custody] = await repository.db
-          .insert(reservistSerializedGear)
-          .values({ reservistId, serializedItemId: serializedItem.id })
-          .returning({ id: reservistSerializedGear.id });
-        if (!custody) throw new CustodyCreationError(line.serialNumber);
-
-        // Write the serialized issue operation to the audit log.
-        await repository.writeSerializedLog(reservistId, serializedItem.id);
-        issued.serialized.push({
-          custodyId: custody.id,
-          serializedItemId: serializedItem.id,
-          serialNumber: serializedItem.serialNumber,
-          categoryId: category.id,
-          categoryName: category.name,
-          size: serializedItem.size,
-        });
-      }
-
-      return { reservistId, requestId: null, issued };
+      return {
+        reservistId,
+        issued,
+      };
     });
   }
 
   async returnGear(
     reservistId: string,
-    body: ReturnGearBody,
+    body: ReturnGearInput,
   ): Promise<ReturnGearResult | undefined> {
     return this.db.transaction(async (tx) => {
-      // Start transaction and lock the reservist
-      // The reservist lock serializes concurrent issue/return operations for this reservist.
-      // This is important because allowance calculations and current holdings must not be evaluated against a changing reservist state.
       const repository = new GearRepository(tx);
+
       const reservist = await repository.lockReservist(reservistId);
+
       if (!reservist) return undefined;
 
-      // Normalize and aggregate request lines
-      // A client may accidentally send the same bulk inventory item more than once:
-      // [{ itemA, quantity: 2 }, { itemA, quantity: 3 }]
-      // We merge these into: [{ itemA, quantity: 5 }]
-      // This makes the rest of the transaction operate on one deterministic line per inventory item.
-      const bulkLines = [
-        ...body.bulk.reduce((lines, line) => {
-          const existing = lines.get(line.inventoryItemId);
-          lines.set(line.inventoryItemId, {
-            inventoryItemId: line.inventoryItemId,
-            quantity: (existing?.quantity ?? 0) + line.quantity,
-          });
-          return lines;
-        }, new Map<string, ReturnGearBody['bulk'][number]>()),
-      ]
-        // Use deterministic ordering for consistent processing/locking.
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([, line]) => line);
+      // Resolve and validate the complete return request.
+      const validated = await repository.validateReturnRequest(reservistId, body);
 
-      // Serialized items are already unique physical items, so we only need deterministic ordering here.
-      const serializedLines = [...body.serialized].sort((a, b) =>
-        a.serialNumber.localeCompare(b.serialNumber),
-      );
+      //  Mutate inventory using already-resolved entities.
+      const returned: ReturnGearResult['returned'] = {
+        bulk: [],
+        serialized: [],
+      };
 
-      // Validate all bulk return requests
-      // We resolve and validate everything BEFORE modifying inventory.
-      // This prevents a transaction from partially processing a request before discovering that another requested item is not actually held.
-      const bulkHoldings = new Map<
-        string,
-        {
-          inventoryItem: InventoryItem;
-          holding: { id: string; quantity: number };
-          category: GearCategory;
-        }
-      >();
-
-      for (const line of bulkLines) {
-        // Confirm that the requested inventory item exists.
-        const inventoryItem = await repository.findInventoryItemById(line.inventoryItemId);
-        if (!inventoryItem) throw new InventoryItemNotFoundError(line.inventoryItemId);
-
-        // Confirm that this reservist currently holds enough of this item.
-        // Example: Current holding = 5
-        // Return request = 3 Valid
-        // Current holding = 2
-        // Return request = 3 Invalid
-        const holding = await repository.findBulkHolding(reservistId, line.inventoryItemId);
-        if (!holding || holding.quantity < line.quantity) {
-          throw new InsufficientHoldingError(line.inventoryItemId);
-        }
-
-        const category = await repository.findCategoryById(inventoryItem.categoryId);
-        if (!category) throw new CategoryNotFoundError(inventoryItem.categoryId);
-        bulkHoldings.set(line.inventoryItemId, { inventoryItem, holding, category });
+      for (const resolved of validated.bulkLines) {
+        returned.bulk.push(await repository.returnBulk(reservistId, resolved));
       }
 
-      // A serialized return must correspond to an active custody record for THIS reservist.
-      // This prevents a reservist from returning an item that belongs to another reservist.
-      const serializedHoldings = new Map<
-        string,
-        { custodyId: string; serializedItem: SerializedItem; category: GearCategory }
-      >();
-      for (const line of serializedLines) {
-        const holding = await repository.findActiveSerializedHolding(
-          reservistId,
-          line.serialNumber,
-        );
-        if (!holding) throw new SerializedItemNotFoundError(line.serialNumber);
-
-        const category = await repository.findCategoryById(holding.serializedItem.categoryId);
-        if (!category) throw new CategoryNotFoundError(holding.serializedItem.categoryId);
-        serializedHoldings.set(line.serialNumber, { ...holding, category });
+      for (const resolved of validated.serializedLines) {
+        returned.serialized.push(await repository.returnSerialized(reservistId, resolved));
       }
 
-      const returned: ReturnGearResult['returned'] = { bulk: [], serialized: [] };
-
-      // Return bulk inventory
-      for (const line of bulkLines) {
-        const resolved = bulkHoldings.get(line.inventoryItemId);
-        if (!resolved) throw new InventoryItemNotFoundError(line.inventoryItemId);
-
-        // Lock the inventory row before changing stock.
-        // This makes stock adjustment deterministic when multiple transactions are returning/issuing the same inventory item concurrently.
-        await repository.lockInventoryItem(line.inventoryItemId);
-
-        // Returning bulk equipment puts the quantity back into available inventory.
-        const restockedTo = await repository.adjustStock(line.inventoryItemId, line.quantity);
-
-        // Remove the returned quantity from the reservist's holding.
-        // If the entire holding is returned, the holding row is deleted.
-        // Otherwise its quantity is decreased.
-        const remainingHeld = await repository.removeBulkHolding(
-          resolved.holding.id,
-          resolved.holding.quantity,
-          line.quantity,
-        );
-        // Write the return operation to the audit log.
-        await repository.writeBulkReturnLog(reservistId, line.inventoryItemId, line.quantity);
-
-        returned.bulk.push({
-          inventoryItemId: line.inventoryItemId,
-          categoryId: resolved.category.id,
-          categoryName: resolved.category.name,
-          size: resolved.inventoryItem.size,
-          quantity: line.quantity,
-          remainingHeld,
-          restockedTo,
-        });
-      }
-
-      // Return serialized inventory
-      for (const line of serializedLines) {
-        const resolved = serializedHoldings.get(line.serialNumber);
-        if (!resolved) throw new SerializedItemNotFoundError(line.serialNumber);
-
-        // Lock the physical serialized item before changing its status.
-        await repository.lockSerializedItem(resolved.serializedItem.id);
-
-        // The condition supplied during return determines the item's next inventory status:
-        // SERVICEABLE -> AVAILABLE
-        // DAMAGED -> MAINTENANCE
-        // LOST -> LOST
-        await repository.updateSerializedStatus(resolved.serializedItem.id, line.condition);
-
-        // Close the custody relationship between the reservist and the item.
-        // returnedAt being populated means this reservist no longer possesses the item.
-        await repository.markSerializedReturned(resolved.custodyId, reservistId);
-
-        // Write the serialized return operation to the audit log.
-        await repository.writeSerializedReturnLog(reservistId, resolved.serializedItem.id);
-
-        returned.serialized.push({
-          serializedItemId: resolved.serializedItem.id,
-          serialNumber: resolved.serializedItem.serialNumber,
-          categoryId: resolved.category.id,
-          categoryName: resolved.category.name,
-          size: resolved.serializedItem.size,
-          condition: line.condition,
-          newStatus:
-            line.condition === 'SERVICEABLE'
-              ? 'AVAILABLE'
-              : line.condition === 'DAMAGED'
-                ? 'MAINTENANCE'
-                : 'LOST',
-        });
-      }
-
-      return { reservistId, requestId: null, returned };
+      return {
+        reservistId,
+        returned,
+      };
     });
+  }
+
+  // Issued gear utils
+  private async validateIssueRequest(body: IssueGearInput): Promise<ValidatedIssueRequest> {
+    const bulkLines = mergeBulkLines(body.bulk);
+
+    const serializedLines = [...body.serialized].sort((a, b) =>
+      a.serialNumber.localeCompare(b.serialNumber),
+    );
+
+    const resolvedBulk: ResolvedIssueBulk[] = [];
+
+    for (const line of bulkLines) {
+      const inventoryItem = await this.findInventoryItemById(line.inventoryItemId);
+
+      if (!inventoryItem) {
+        throw new InventoryItemNotFoundError(line.inventoryItemId);
+      }
+
+      const category = await this.findCategoryById(inventoryItem.categoryId);
+
+      if (!category) {
+        throw new CategoryNotFoundError(inventoryItem.categoryId);
+      }
+
+      resolvedBulk.push({
+        line,
+        inventoryItem,
+        category,
+      });
+    }
+
+    const resolvedSerialized: ResolvedIssueSerialized[] = [];
+
+    for (const line of serializedLines) {
+      /*
+       * Important:
+       *
+       * We lock the serialized item HERE rather than doing a normal lookup
+       * followed by another lookup during mutation.
+       *
+       * This both resolves the item and protects the AVAILABLE check.
+       */
+      const serializedItem = await this.lockAvailableSerializedItem(line.serialNumber);
+
+      if (!serializedItem) {
+        throw new SerializedItemNotFoundError(line.serialNumber);
+      }
+
+      const category = await this.findCategoryById(serializedItem.categoryId);
+
+      if (!category) {
+        throw new CategoryNotFoundError(serializedItem.categoryId);
+      }
+
+      resolvedSerialized.push({
+        line,
+        serializedItem,
+        category,
+      });
+    }
+
+    return {
+      bulkLines: resolvedBulk,
+      serializedLines: resolvedSerialized,
+    };
+  }
+
+  private async validateIssueAllowances(
+    reservistId: string,
+    request: ValidatedIssueRequest,
+  ): Promise<void> {
+    const requestedByCategory = new Map<string, number>();
+    const categories = new Map<string, GearCategory>();
+
+    for (const { line, category } of request.bulkLines) {
+      categories.set(category.id, category);
+
+      requestedByCategory.set(
+        category.id,
+        (requestedByCategory.get(category.id) ?? 0) + line.quantity,
+      );
+    }
+
+    for (const { category } of request.serializedLines) {
+      categories.set(category.id, category);
+
+      requestedByCategory.set(category.id, (requestedByCategory.get(category.id) ?? 0) + 1);
+    }
+
+    const [heldBulk, heldSerialized] = await Promise.all([
+      this.sumBulkHeldByCategory(reservistId),
+      this.countSerializedHeldByCategory(reservistId),
+    ]);
+
+    for (const [categoryId, requested] of requestedByCategory) {
+      const category = categories.get(categoryId);
+
+      if (!category) {
+        throw new CategoryNotFoundError(categoryId);
+      }
+
+      const held = (heldBulk.get(categoryId) ?? 0) + (heldSerialized.get(categoryId) ?? 0);
+
+      if (held + requested > category.maxPerReservist) {
+        throw new AllowanceExceededError(category.name, category.maxPerReservist);
+      }
+    }
+  }
+
+  private async issueBulk(
+    reservistId: string,
+    resolved: ResolvedIssueBulk,
+  ): Promise<IssuedBulkResult> {
+    const { line, inventoryItem, category } = resolved;
+
+    const stock = await this.decreaseStock(inventoryItem.id, line.quantity);
+
+    if (stock === undefined) {
+      throw new InsufficientStockError(inventoryItem.id);
+    }
+
+    const totalHeld = await this.addBulkHolding(reservistId, inventoryItem.id, line.quantity);
+
+    await this.writeBulkLog(reservistId, inventoryItem.id, line.quantity);
+
+    return {
+      inventoryItemId: inventoryItem.id,
+      categoryId: category.id,
+      categoryName: category.name,
+      size: inventoryItem.size,
+      quantity: line.quantity,
+      remainingStock: stock,
+      totalHeld,
+    };
+  }
+
+  private async issueSerialized(
+    reservistId: string,
+    resolved: ResolvedIssueSerialized,
+  ): Promise<IssuedSerializedResult> {
+    const { line, serializedItem, category } = resolved;
+
+    await this.markSerializedIssued(serializedItem.id);
+
+    const [custody] = await this.db
+      .insert(reservistSerializedGear)
+      .values({
+        reservistId,
+        serializedItemId: serializedItem.id,
+      })
+      .returning({
+        id: reservistSerializedGear.id,
+      });
+
+    if (!custody) {
+      throw new CustodyCreationError(line.serialNumber);
+    }
+
+    await this.writeSerializedLog(reservistId, serializedItem.id);
+
+    return {
+      custodyId: custody.id,
+      serializedItemId: serializedItem.id,
+      serialNumber: serializedItem.serialNumber,
+      categoryId: category.id,
+      categoryName: category.name,
+      size: serializedItem.size,
+    };
+  }
+
+  // Return gear utils
+  private async validateReturnRequest(
+    reservistId: string,
+    body: ReturnGearInput,
+  ): Promise<ValidatedReturnRequest> {
+    const bulkLines = mergeBulkLines(body.bulk);
+
+    const serializedLines = [...body.serialized].sort((a, b) =>
+      a.serialNumber.localeCompare(b.serialNumber),
+    );
+
+    const resolvedBulk: ResolvedReturnBulk[] = [];
+
+    for (const line of bulkLines) {
+      const inventoryItem = await this.findInventoryItemById(line.inventoryItemId);
+
+      if (!inventoryItem) {
+        throw new InventoryItemNotFoundError(line.inventoryItemId);
+      }
+
+      const holding = await this.findBulkHolding(reservistId, line.inventoryItemId);
+
+      if (!holding || holding.quantity < line.quantity) {
+        throw new InsufficientHoldingError(line.inventoryItemId);
+      }
+
+      const category = await this.findCategoryById(inventoryItem.categoryId);
+
+      if (!category) {
+        throw new CategoryNotFoundError(inventoryItem.categoryId);
+      }
+
+      resolvedBulk.push({
+        line,
+        inventoryItem,
+        holding,
+        category,
+      });
+    }
+
+    const resolvedSerialized: ResolvedReturnSerialized[] = [];
+
+    for (const line of serializedLines) {
+      const holding = await this.findActiveSerializedHolding(reservistId, line.serialNumber);
+
+      if (!holding) {
+        throw new SerializedItemNotFoundError(line.serialNumber);
+      }
+
+      const category = await this.findCategoryById(holding.serializedItem.categoryId);
+
+      if (!category) {
+        throw new CategoryNotFoundError(holding.serializedItem.categoryId);
+      }
+
+      resolvedSerialized.push({
+        line,
+        custodyId: holding.custodyId,
+        serializedItem: holding.serializedItem,
+        category,
+      });
+    }
+
+    return {
+      bulkLines: resolvedBulk,
+      serializedLines: resolvedSerialized,
+    };
+  }
+
+  private async returnBulk(
+    reservistId: string,
+    resolved: ResolvedReturnBulk,
+  ): Promise<ReturnedBulkResult> {
+    const { line, inventoryItem, holding, category } = resolved;
+
+    // Lock inventory before changing stock.
+    await this.lockInventoryItem(inventoryItem.id);
+
+    const restockedTo = await this.adjustStock(inventoryItem.id, line.quantity);
+
+    const remainingHeld = await this.removeBulkHolding(holding.id, holding.quantity, line.quantity);
+
+    await this.writeBulkReturnLog(reservistId, inventoryItem.id, line.quantity);
+
+    return {
+      inventoryItemId: inventoryItem.id,
+      categoryId: category.id,
+      categoryName: category.name,
+      size: inventoryItem.size,
+      quantity: line.quantity,
+      remainingHeld,
+      restockedTo,
+    };
+  }
+
+  private async returnSerialized(
+    reservistId: string,
+    resolved: ResolvedReturnSerialized,
+  ): Promise<ReturnedSerializedResult> {
+    const { line, custodyId, serializedItem, category } = resolved;
+
+    await this.lockSerializedItem(serializedItem.id);
+
+    await this.updateSerializedStatus(serializedItem.id, line.condition);
+
+    await this.markSerializedReturned(custodyId, reservistId);
+
+    await this.writeSerializedReturnLog(reservistId, serializedItem.id);
+
+    return {
+      serializedItemId: serializedItem.id,
+      serialNumber: serializedItem.serialNumber,
+      categoryId: category.id,
+      categoryName: category.name,
+      size: serializedItem.size,
+      condition: line.condition,
+      newStatus: CONDITION_TO_STATUS[line.condition],
+    };
   }
 
   private async lockReservist(id: string) {
@@ -456,7 +488,7 @@ export class GearRepository {
 
   private async updateSerializedStatus(
     serializedItemId: string,
-    condition: ReturnGearBody['serialized'][number]['condition'],
+    condition: ReturnGearInput['serialized'][number]['condition'],
   ) {
     const status =
       condition === 'SERVICEABLE' ? 'AVAILABLE' : condition === 'DAMAGED' ? 'MAINTENANCE' : 'LOST';

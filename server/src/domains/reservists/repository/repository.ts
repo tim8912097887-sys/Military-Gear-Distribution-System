@@ -1,11 +1,11 @@
 import { and, asc, eq, ilike, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { reservists, type Reservist } from '../../../infrastructure/db/schema/reservists.js';
-import type { ListReservistsQuery, ListReservistsResponse } from './dto.js';
+import type { ListReservistsRepositoryInput, ListReservistsResult } from './dto.js';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 export class ReservistRepository {
   constructor(private readonly db: NodePgDatabase) {}
-  async list(query: ListReservistsQuery): Promise<ListReservistsResponse> {
+  async list(query: ListReservistsRepositoryInput): Promise<ListReservistsResult> {
     const filters = [
       query.q
         ? or(ilike(reservists.name, `%${query.q}%`), ilike(reservists.nationalId, `%${query.q}%`))
@@ -40,9 +40,12 @@ export class ReservistRepository {
   async setCheckedIn(id: string): Promise<Reservist | undefined> {
     const [row] = await this.db
       .update(reservists)
-      .set({ checkedInAt: new Date() })
-      .where(eq(reservists.id, id))
+      .set({
+        checkedInAt: new Date(),
+      })
+      .where(and(eq(reservists.id, id), isNull(reservists.checkedInAt)))
       .returning();
+
     return row;
   }
 }

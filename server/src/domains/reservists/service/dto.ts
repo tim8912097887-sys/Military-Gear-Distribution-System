@@ -11,3 +11,10 @@ export type ListReservistsResponse = {
   reservists: ReservistView[];
   pagination: { total: number; limit: number; offset: number };
 };
+
+export type ListReservistsServiceInput = {
+  q?: string;
+  checkedIn?: boolean;
+  limit: number;
+  offset: number;
+};
