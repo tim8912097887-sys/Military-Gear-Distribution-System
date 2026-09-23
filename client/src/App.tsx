@@ -1,7 +1,11 @@
+import ReservistListPage from "./features/reservists/pages/ReservistListPage";
+
 function App() {
   return (
     <>
-      <div className="text-2xl">Hello</div>
+      <div>
+        <ReservistListPage />
+      </div>
     </>
   );
 }
