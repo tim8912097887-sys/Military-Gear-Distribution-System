@@ -1,10 +1,12 @@
 import { Link, useParams } from "react-router";
-import ReservistDetail from "../components/ReservistDetail";
-import { useQuery } from "@tanstack/react-query";
-import { getReservist } from "../api/query/query";
+import ReservistDetail from "../components/ui/ReservistDetail";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { checkInReservist, getReservist } from "../api/query/query";
 import ReservistDetailSkeleton from "../components/skeleton/ReservistDetailSkeleton";
 import ReservistDetailError from "../components/error/ReservistDetailError";
 import { ApiError } from "../api/error/api-error";
+import { toast } from "react-toastify";
+import { queryClient } from "../../../main";
 
 const ReservistDetailPage = () => {
   const { id } = useParams();
@@ -23,6 +25,41 @@ const ReservistDetailPage = () => {
     },
   });
 
+  const { isPending: isCheckingIn, mutate } = useMutation({
+    mutationFn: async () => checkInReservist(reservistId),
+    onSuccess: (updatedReservist) => {
+      // Update the reservist in the cache
+      queryClient.setQueryData(
+        ["reservistdetailpage", reservistId],
+        updatedReservist,
+      );
+
+      toast.success("Reservist checked in successfully", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: false,
+        progress: undefined,
+        theme: "dark",
+      });
+    },
+
+    onError: (error) => {
+      toast.error(error.message, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: false,
+        progress: undefined,
+        theme: "dark",
+      });
+    },
+  });
+
   const content = (() => {
     if (isPending) {
       return <ReservistDetailSkeleton />;
@@ -36,7 +73,13 @@ const ReservistDetailPage = () => {
       return <ReservistDetailError />;
     }
 
-    return <ReservistDetail reservist={data} />;
+    return (
+      <ReservistDetail
+        reservist={data}
+        onCheckIn={mutate}
+        isCheckingIn={isCheckingIn}
+      />
+    );
   })();
 
   return (

@@ -1,9 +1,4 @@
-import { reservistClient } from "../client/client";
-import type {
-  ApiSuccessResponse,
-  ListReservistsResponse,
-  ReservistView,
-} from "../../types/index";
+import type { ListReservistsResponse, ReservistView } from "../../types/index";
 
 export type ListReservistsParams = {
   q?: string;
@@ -108,9 +103,20 @@ export async function getReservist(
 export async function checkInReservist(
   reservistId: string,
 ): Promise<ReservistView> {
-  const response = await reservistClient.post<
-    ApiSuccessResponse<ReservistView>
-  >(`/${reservistId}/check-in`);
+  // const response = await reservistClient.post<
+  //   ApiSuccessResponse<ReservistView>
+  // >(`/${reservistId}/check-in`);
 
-  return response.data.data;
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
+  const existReservist = await getSingleReservist(reservistId);
+
+  if (existReservist) {
+    return {
+      ...existReservist,
+      checkedInAt: new Date().toISOString(),
+    };
+  }
+
+  throw new Error("Reservist not found");
 }
