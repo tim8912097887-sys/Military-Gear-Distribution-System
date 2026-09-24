@@ -1,4 +1,4 @@
-const ReservistHeader = () => {
+const ReservistListHeader = () => {
   return (
     <div className="mb-6">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber-400">
@@ -17,4 +17,4 @@ const ReservistHeader = () => {
   );
 };
 
-export default ReservistHeader;
+export default ReservistListHeader;

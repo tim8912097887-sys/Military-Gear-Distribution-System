@@ -1,6 +1,7 @@
 import { Link } from "react-router";
-import type { ReservistView } from "../types";
-import { ChevronRight, CircleCheck } from "lucide-react";
+import type { ReservistView } from "../../types";
+import { ChevronRight } from "lucide-react";
+import { ReservistStatusBadge } from "../ReservistStatusBadge";
 
 type ReservistCardProps = {
   reservist: ReservistView;
@@ -55,26 +56,7 @@ export function ReservistCard({ reservist }: ReservistCardProps) {
       </div>
 
       <div className="mt-4 border-t border-white/10 pt-3">
-        <span
-          className={`
-            inline-flex items-center gap-2
-            rounded-full px-2.5 py-1
-            text-xs font-medium
-            ${
-              isCheckedIn
-                ? "bg-emerald-400/10 text-emerald-400"
-                : "bg-white/5 text-muted"
-            }
-          `}
-        >
-          {isCheckedIn ? (
-            <CircleCheck className="h-3.5 w-3.5" />
-          ) : (
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-          )}
-
-          {isCheckedIn ? "Checked in" : "Not checked in"}
-        </span>
+        <ReservistStatusBadge checkedIn={isCheckedIn} />
       </div>
     </Link>
   );

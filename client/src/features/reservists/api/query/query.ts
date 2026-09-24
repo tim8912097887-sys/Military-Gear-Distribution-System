@@ -15,6 +15,7 @@ export type ListReservistsParams = {
 export async function listReservists(
   params: ListReservistsParams,
 ): Promise<ListReservistsResponse> {
+  await new Promise((resolve) => setTimeout(resolve, 2000));
   const response = await reservistClient.get<
     ApiSuccessResponse<ListReservistsResponse>
   >("", {
@@ -37,6 +38,7 @@ export async function getReservist(
 export async function checkInReservist(
   reservistId: string,
 ): Promise<ReservistView> {
+  await new Promise((resolve) => setTimeout(resolve, 2000));
   const response = await reservistClient.post<
     ApiSuccessResponse<ReservistView>
   >(`/${reservistId}/check-in`);
