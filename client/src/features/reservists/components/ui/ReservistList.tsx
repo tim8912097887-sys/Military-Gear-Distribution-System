@@ -1,8 +1,8 @@
-import { INITIAL_LIMIT } from "./constants";
+import { INITIAL_LIMIT } from "../constants";
 import ReservistCard from "./ReservistCard";
-import { LoadMoreButtonSkeleton } from "./skeleton/LoadMoreButtonSkeleton";
-import { ReservistCardSkeleton } from "./skeleton/ReservistCardSkeleton";
-import type { ReservistView } from "./types";
+import { LoadMoreButtonSkeleton } from "../skeleton/LoadMoreButtonSkeleton";
+import { ReservistCardSkeleton } from "../skeleton/ReservistCardSkeleton";
+import type { ReservistView } from "../types";
 
 type ReservistListProps = {
   reservists: ReservistView[];

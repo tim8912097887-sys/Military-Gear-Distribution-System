@@ -1,9 +1,16 @@
-import type { ReservistView } from "./types";
+import type { ReservistView } from "../types";
 
 type ReservistDetailProps = {
+  onCheckIn: () => void;
+  isCheckingIn: boolean;
   reservist: ReservistView;
 };
-const ReservistDetail = ({ reservist }: ReservistDetailProps) => {
+
+const ReservistDetail = ({
+  reservist,
+  onCheckIn,
+  isCheckingIn,
+}: ReservistDetailProps) => {
   const isCheckedIn = Boolean(reservist.checkedInAt);
 
   return (
@@ -108,8 +115,11 @@ const ReservistDetail = ({ reservist }: ReservistDetailProps) => {
           ) : (
             <button
               type="button"
+              onClick={onCheckIn}
+              disabled={isCheckingIn}
               className="
                 inline-flex items-center justify-center
+                gap-2
                 rounded-lg
                 bg-emerald-600
                 px-5 py-2.5
@@ -124,7 +134,24 @@ const ReservistDetail = ({ reservist }: ReservistDetailProps) => {
                 active:bg-emerald-700
               "
             >
-              Check in reservist
+              {isCheckingIn ? (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="
+                      h-4 w-4
+                      animate-spin
+                      rounded-full
+                      border-2
+                      border-white/30
+                      border-t-white
+                    "
+                  />
+                  Checking in...
+                </>
+              ) : (
+                "Check in reservist"
+              )}
             </button>
           )}
         </div>

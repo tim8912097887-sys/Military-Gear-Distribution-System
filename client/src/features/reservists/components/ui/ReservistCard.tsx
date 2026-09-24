@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import type { ReservistView } from "./types";
+import type { ReservistView } from "../types";
 import { ChevronRight, CircleCheck } from "lucide-react";
 
 type ReservistCardProps = {

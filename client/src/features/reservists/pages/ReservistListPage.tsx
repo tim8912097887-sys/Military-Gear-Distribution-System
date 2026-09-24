@@ -1,7 +1,7 @@
 import { useState } from "react";
-import ReservistList from "../components/ReservistList";
-import ReservistHeader from "../components/ReservistHeader";
-import { SearchBar } from "../components/SearchBar";
+import ReservistList from "../components/ui/ReservistList";
+import ReservistHeader from "../components/ui/ReservistHeader";
+import { SearchBar } from "../components/ui/SearchBar";
 import { ReservistCardSkeleton } from "../components/skeleton/ReservistCardSkeleton";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { listReservists } from "../api/query/query";
