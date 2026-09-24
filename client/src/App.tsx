@@ -1,10 +1,10 @@
-import ReservistListPage from "./features/reservists/pages/ReservistListPage";
+import { Outlet } from "react-router";
 
 function App() {
   return (
     <>
       <div>
-        <ReservistListPage />
+        <Outlet />
       </div>
     </>
   );

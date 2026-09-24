@@ -6,14 +6,14 @@ import type { ReservistView } from "./types";
 
 type ReservistListProps = {
   reservists: ReservistView[];
-  isLoading?: boolean;
+  isInitialLoading?: boolean;
 };
 
 const ReservistList = ({
   reservists,
-  isLoading = false,
+  isInitialLoading = false,
 }: ReservistListProps) => {
-  if (isLoading && reservists.length === 0) {
+  if (isInitialLoading && reservists.length === 0) {
     return (
       <div className="flex w-full flex-col gap-3">
         {[...Array(INITIAL_LIMIT)].map((_, i) => (
