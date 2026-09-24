@@ -1,7 +1,7 @@
 import { type CorsOptions } from 'cors';
 import { type Request } from 'express';
+import { env } from '../env/index.js';
 
-const allowedOrigins = ['http://localhost:5173'];
 export const corsConfig = (req: Request, callback: any) => {
   const corsOptions: Partial<CorsOptions> = {
     origin: '*',
@@ -9,6 +9,6 @@ export const corsConfig = (req: Request, callback: any) => {
     preflightContinue: false,
     optionsSuccessStatus: 204,
   };
-  corsOptions.origin = allowedOrigins;
+  corsOptions.origin = env.CORS_ORIGIN;
   callback(null, corsOptions);
 };

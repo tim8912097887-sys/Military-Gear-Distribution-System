@@ -24,14 +24,13 @@ const ReservistListPage = () => {
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }) => {
       const response = await listReservists({
-        q: search,
+        q: search === "" ? undefined : search,
         cursor: pageParam,
         limit: INITIAL_LIMIT,
       });
 
       return response;
     },
-    retry: false,
     getNextPageParam: (lastPage) =>
       lastPage.pagination.hasMore ? lastPage.pagination.nextCursor : undefined,
   });

@@ -8,10 +8,13 @@ export class ReservistService {
   constructor(private readonly reservistRepository: ReservistRepository) {}
 
   async list(query: ListReservistsServiceInput): Promise<ListReservistsResponse> {
-    const { rows, total } = await this.reservistRepository.list(query);
+    const {
+      rows,
+      pagination: { total, nextCursor, hasMore },
+    } = await this.reservistRepository.list(query);
     return {
       reservists: rows.map((r) => this.toView(r)),
-      pagination: { total, limit: query.limit, offset: query.offset },
+      pagination: { total, limit: query.limit, nextCursor, hasMore },
     };
   }
 

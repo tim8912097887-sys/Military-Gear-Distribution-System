@@ -27,6 +27,7 @@ const EnvSchema = z.object({
     .regex(
       /^postgres(?:ql)?:\/\/(?:[^:@/\s]+(?::[^@/\s]*)?@)?[^:/\s?#]+(?::\d{1,5})?\/[^\s?#]+(?:\?[^\s#]*)?$/,
     ),
+  CORS_ORIGIN: z.url('CORS_ORIGIN must be a valid URL'),
 });
 
 const result = EnvSchema.safeParse(process.env);
