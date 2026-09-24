@@ -9,12 +9,12 @@ export type ReservistView = {
 
 export type ListReservistsResponse = {
   reservists: ReservistView[];
-  pagination: { total: number; limit: number; offset: number };
+  pagination: { total: number; limit: number; nextCursor: string | null; hasMore: boolean };
 };
 
 export type ListReservistsServiceInput = {
   q?: string;
   checkedIn?: boolean;
   limit: number;
-  offset: number;
+  cursor?: string | null;
 };

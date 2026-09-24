@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, ilike, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { reservists, type Reservist } from '../../../infrastructure/db/schema/reservists.js';
 import type { ListReservistsRepositoryInput, ListReservistsResult } from './dto.js';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -12,6 +12,7 @@ export class ReservistRepository {
         : undefined,
       query.checkedIn === true ? isNotNull(reservists.checkedInAt) : undefined,
       query.checkedIn === false ? isNull(reservists.checkedInAt) : undefined,
+      query.cursor ? gt(reservists.id, query.cursor) : undefined,
     ].filter((f): f is NonNullable<typeof f> => f !== undefined);
 
     const where = filters.length > 0 ? and(...filters) : undefined;
@@ -20,16 +21,22 @@ export class ReservistRepository {
       .select()
       .from(reservists)
       .where(where)
-      .orderBy(asc(reservists.name), asc(reservists.id))
-      .limit(query.limit)
-      .offset(query.offset);
+      .orderBy(asc(reservists.id))
+      .limit(query.limit + 1);
 
     const [count] = await this.db
       .select({ total: sql<number>`count(*)::int` })
       .from(reservists)
       .where(where);
 
-    return { rows, total: count?.total ?? 0 };
+    const hasMore = rows.length > query.limit;
+
+    const nextCursor = hasMore ? rows[query.limit - 1].id : null;
+
+    return {
+      rows: rows.slice(0, query.limit),
+      pagination: { total: count.total, limit: query.limit, nextCursor, hasMore },
+    };
   }
 
   async findById(id: string): Promise<Reservist | undefined> {

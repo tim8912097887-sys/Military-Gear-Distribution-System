@@ -4,10 +4,15 @@ export type ListReservistsRepositoryInput = {
   q?: string;
   checkedIn?: boolean;
   limit: number;
-  offset: number;
+  cursor?: string | null;
 };
 
 export type ListReservistsResult = {
   rows: Reservist[];
-  total: number;
+  pagination: {
+    total: number;
+    limit: number;
+    nextCursor: string | null;
+    hasMore: boolean;
+  };
 };
