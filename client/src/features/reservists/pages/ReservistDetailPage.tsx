@@ -1,76 +1,30 @@
 import { Link, useParams } from "react-router";
-import ReservistDetail from "../components/ui/ReservistDetail";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { checkInReservist, getReservist } from "../api/query/query";
+import ReservistDetail from "../components/ui/detail/ReservistDetail";
 import ReservistDetailSkeleton from "../components/skeleton/ReservistDetailSkeleton";
 import ReservistDetailError from "../components/error/ReservistDetailError";
-import { ApiError } from "../api/error/api-error";
-import { toast } from "react-toastify";
-import { queryClient } from "../../../main";
+import useGetReservist from "../hooks/useGetReservist";
+import { useCheckInReservist } from "../hooks/useCheckInReservist";
+import { reservistIdSchema } from "../schema/reservist-id";
+import ReservistDetailIdError from "../components/error/ReservistDetailIdError";
 
 const ReservistDetailPage = () => {
   const { id } = useParams();
-  const reservistId = id as string;
+  const result = reservistIdSchema.safeParse(id);
 
-  const { isPending, error, data } = useQuery({
-    queryKey: ["reservistdetailpage", reservistId],
-    queryFn: () => getReservist(reservistId),
-    retry: (failureCount, error) => {
-      // Stop retrying if it's a 404
-      if (error instanceof ApiError && error.status === 404) {
-        return false;
-      }
+  const { isPending, error, data, refetch } = useGetReservist(id as string);
 
-      return failureCount < 3;
-    },
-  });
-
-  const { isPending: isCheckingIn, mutate } = useMutation({
-    mutationFn: async () => checkInReservist(reservistId),
-    onSuccess: (updatedReservist) => {
-      // Update the reservist in the cache
-      queryClient.setQueryData(
-        ["reservistdetailpage", reservistId],
-        updatedReservist,
-      );
-
-      toast.success("Reservist checked in successfully", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: false,
-        progress: undefined,
-        theme: "dark",
-      });
-    },
-
-    onError: (error) => {
-      toast.error(error.message, {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: false,
-        progress: undefined,
-        theme: "dark",
-      });
-    },
-  });
+  const { isPending: isCheckingIn, mutate } = useCheckInReservist(id as string);
 
   const content = (() => {
+    if (!result.success) {
+      return <ReservistDetailIdError />;
+    }
     if (isPending) {
       return <ReservistDetailSkeleton />;
     }
 
-    if (error) {
-      return <ReservistDetailError error={error} />;
-    }
-
-    if (!data) {
-      return <ReservistDetailError />;
+    if (!data || error) {
+      return <ReservistDetailError error={error} onRetry={() => refetch()} />;
     }
 
     return (
