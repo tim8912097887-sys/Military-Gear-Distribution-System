@@ -7,7 +7,16 @@ import {
 import { listReservists } from "../api/query/query";
 
 const useGetReservists = (search: string) => {
-  return useInfiniteQuery({
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    error,
+    isFetchNextPageError,
+    isLoading: isInitialLoading,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery({
     queryKey: reservistKeys.list(search),
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }) => {
@@ -22,6 +31,22 @@ const useGetReservists = (search: string) => {
     getNextPageParam: (lastPage) =>
       lastPage.pagination.hasMore ? lastPage.pagination.nextCursor : undefined,
   });
+
+  const reservists = data?.pages.flatMap((page) => page.reservists) ?? [];
+
+  const hasInitialError = !!error && !data;
+
+  return {
+    reservists,
+    fetchNextPage,
+    hasInitialError,
+    hasNextPage,
+    error,
+    hasNextPageError: isFetchNextPageError,
+    isInitialLoading,
+    isFetchingNextPage,
+    refetch,
+  };
 };
 
 export default useGetReservists;
