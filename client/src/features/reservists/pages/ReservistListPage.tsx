@@ -7,20 +7,15 @@ const ReservistListPage = () => {
   const [search, setSearch] = useState("");
 
   const {
-    data,
-    error,
-    isFetchNextPageError,
-    isLoading: isInitialLoading,
+    reservists,
+    hasInitialError,
+    hasNextPageError,
+    isInitialLoading,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
     refetch,
   } = useGetReservists(search);
-
-  const reservists = data?.pages.flatMap((page) => page.reservists) ?? [];
-
-  const hasInitialError = !!error && !data;
-  const hasNextPageError = isFetchNextPageError;
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-950">
