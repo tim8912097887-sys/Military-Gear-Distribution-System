@@ -9,6 +9,3 @@ export const reservistKeys = {
 
   detail: (id: string) => [...reservistKeys.details(), id] as const,
 };
-
-export const INITIAL_LIMIT = 3;
-export const INCREMENT_LIMIT = 3;
