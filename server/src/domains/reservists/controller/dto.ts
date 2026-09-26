@@ -22,7 +22,7 @@ export const listReservistsQuerySchema = z.object({
       z.enum(['true', 'false']).optional(),
     )
     .transform((val) => (val === undefined ? undefined : val === 'true')),
-  limit: z.coerce.number().int().min(1).max(100).default(5),
+  limit: z.coerce.number().int().min(1).max(20).default(5),
   cursor: z.uuid('cursor must be a UUID').nullish(),
 });
 

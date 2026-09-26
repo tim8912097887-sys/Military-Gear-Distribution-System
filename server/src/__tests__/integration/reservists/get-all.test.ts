@@ -41,9 +41,6 @@ describe('GET /api/v1/reservists', () => {
   });
   describe('success', () => {
     it('when no reservists exist then responds 200 with an empty list and total 0', async () => {
-      // Arrange
-      // (database is empty: truncated before every test)
-
       // Act
       const res = await api().get(RESERVISTS_URL);
 
@@ -55,7 +52,8 @@ describe('GET /api/v1/reservists', () => {
         pagination: {
           total: 0,
           limit: LIST_LIMITS.defaultLimit,
-          offset: LIST_LIMITS.defaultOffset,
+          nextCursor: LIST_LIMITS.defaultCursor,
+          hasMore: false,
         },
       });
     });
@@ -72,6 +70,8 @@ describe('GET /api/v1/reservists', () => {
       expect(res.body.state).toBe(STATE.SUCCESS);
       expect(res.body.data.reservists).toEqual([toExpectedView(reservist)]);
       expect(res.body.data.pagination.total).toBe(1);
+      expect(res.body.data.pagination.hasMore).toBe(false);
+      expect(res.body.data.pagination.nextCursor).toBeNull();
     });
 
     it('when a reservist has checked in then checkedInAt is an ISO string, otherwise null', async () => {
@@ -85,39 +85,11 @@ describe('GET /api/v1/reservists', () => {
       // Assert
       expect(res.status).toBe(HTTP_STATUS.OK);
       expect(res.body.state).toBe(STATE.SUCCESS);
-      const [alice, bob] = res.body.data.reservists;
+      const [first, second] = res.body.data.reservists;
+      const alice = first.checkedInAt ? first : second;
+      const bob = first.checkedInAt ? second : first;
       expect(alice.checkedInAt).toBe(DEFAULT_CHECKED_IN_AT.toISOString());
       expect(bob.checkedInAt).toBeNull();
-    });
-
-    it('when offset is beyond the total then responds 200 with an empty page and the real total', async () => {
-      // Arrange
-      await seedReservists(buildReservists(3));
-
-      // Act
-      const res = await api().get(RESERVISTS_URL).query({ offset: 50 });
-
-      // Assert
-      expect(res.status).toBe(HTTP_STATUS.OK);
-      expect(res.body.data.reservists).toEqual([]);
-      expect(res.body.data.pagination).toEqual({
-        total: 3,
-        limit: LIST_LIMITS.defaultLimit,
-        offset: 50,
-      });
-    });
-
-    it('when offset equals the total then responds 200 with an empty page', async () => {
-      // Arrange
-      await seedReservists(buildReservists(3));
-
-      // Act
-      const res = await api().get(RESERVISTS_URL).query({ offset: 3 });
-
-      // Assert
-      expect(res.status).toBe(HTTP_STATUS.OK);
-      expect(res.body.data.reservists).toEqual([]);
-      expect(res.body.data.pagination.total).toBe(3);
     });
 
     it('when checkedIn=true is requested and nobody has checked in then responds 200 with an empty list', async () => {
@@ -131,6 +103,8 @@ describe('GET /api/v1/reservists', () => {
       expect(res.status).toBe(HTTP_STATUS.OK);
       expect(res.body.data.reservists).toEqual([]);
       expect(res.body.data.pagination.total).toBe(0);
+      expect(res.body.data.pagination.hasMore).toBe(false);
+      expect(res.body.data.pagination.nextCursor).toBeNull();
     });
 
     it('when checkedIn=false is requested and everyone has checked in then responds 200 with an empty list', async () => {
@@ -144,6 +118,8 @@ describe('GET /api/v1/reservists', () => {
       expect(res.status).toBe(HTTP_STATUS.OK);
       expect(res.body.data.reservists).toEqual([]);
       expect(res.body.data.pagination.total).toBe(0);
+      expect(res.body.data.pagination.hasMore).toBe(false);
+      expect(res.body.data.pagination.nextCursor).toBeNull();
     });
 
     it('when checkedIn=true is requested and somebody has checked in then responds 200 with a list that only contains checked-in reservists', async () => {
@@ -172,6 +148,40 @@ describe('GET /api/v1/reservists', () => {
       expect(res.status).toBe(HTTP_STATUS.OK);
       expect(res.body.data.reservists.length).toBe(5);
       expect(res.body.data.pagination.total).toBe(5);
+    });
+
+    it('when cursor is null and limit is less than the number of reservists then responds 200 with the limit number of reservists and id of the next cursor', async () => {
+      // Arrange
+      await seedReservists(buildReservists(3));
+
+      // Act
+      const res = await api().get(RESERVISTS_URL).query({ limit: '2' });
+
+      // Assert
+      expect(res.status).toBe(HTTP_STATUS.OK);
+      expect(res.body.data.reservists.length).toBe(2);
+      expect(res.body.data.pagination.total).toBe(3);
+      expect(res.body.data.pagination.nextCursor).toBe(res.body.data.reservists[1].id);
+      expect(res.body.data.pagination.hasMore).toBe(true);
+    });
+
+    it('when cursor is not null and limit is less than the number of reservists then responds 200 with the limit number of reservists and id of the next cursor', async () => {
+      // Arrange
+      const total = 9;
+      const limit = 2;
+      const seededReservists = await seedReservists(buildReservists(total));
+      const sortedReservists = seededReservists.sort((a, b) => (a.id > b.id ? 1 : -1));
+      // Act
+      const res = await api()
+        .get(RESERVISTS_URL)
+        .query({ cursor: sortedReservists[1].id, limit: '2' });
+
+      // Assert
+      expect(res.status).toBe(HTTP_STATUS.OK);
+      expect(res.body.data.reservists.length).toBe(limit);
+      expect(res.body.data.pagination.total).toBe(total - limit);
+      expect(res.body.data.pagination.nextCursor).toBe(res.body.data.reservists[1].id);
+      expect(res.body.data.pagination.hasMore).toBe(true);
     });
   });
 
@@ -226,6 +236,8 @@ describe('GET /api/v1/reservists', () => {
       expect(failed.status).toBe(HTTP_STATUS.INTERNAL_SERVER_ERROR);
       expect(recovered.status).toBe(HTTP_STATUS.OK);
       expect(recovered.body.data.pagination.total).toBe(2);
+      expect(recovered.body.data.pagination.hasMore).toBe(false);
+      expect(recovered.body.data.pagination.nextCursor).toBeNull();
     });
   });
 });
