@@ -13,10 +13,10 @@ export const HTTP_STATUS = {
 } as const;
 
 export const LIST_LIMITS = {
-  defaultLimit: 20,
-  defaultOffset: 0,
+  defaultLimit: 5,
+  defaultCursor: null,
   minLimit: 1,
-  maxLimit: 100,
+  maxLimit: 20,
 } as const;
 
 export const STATE = {
