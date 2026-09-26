@@ -1,4 +1,4 @@
-import { INITIAL_LIMIT } from "../../../constants/key";
+import { INCREMENT_LIMIT, INITIAL_LIMIT } from "../../../constants/limit";
 import ReservistListInitialError from "../../error/ReservistListInitialError";
 import ReservistNextPageError from "../../error/ReservistNextPageError";
 import { ReservistCardSkeleton } from "../../skeleton/ReservistCardSkeleton";
@@ -6,7 +6,7 @@ import type { ReservistView } from "../../types";
 import ReservistList from "./ReservistList";
 import { SearchBar } from "./SearchBar";
 
-type ReservistListPanelProps = {
+export type ReservistListPanelProps = {
   reservists: ReservistView[];
   hasNextPage: boolean;
   hasNextPageError: boolean;
@@ -106,7 +106,7 @@ const ReservistListPanel = ({
             {/* Next page loading */}
             {isFetchingNextPage && (
               <div className="mt-3 space-y-3">
-                {[...Array(3)].map((_, i) => (
+                {[...Array(INCREMENT_LIMIT)].map((_, i) => (
                   <ReservistCardSkeleton key={i} />
                 ))}
               </div>

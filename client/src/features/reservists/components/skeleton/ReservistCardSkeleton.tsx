@@ -1,3 +1,5 @@
+import { RESERVIST_CARD_SKELETON_TEST_ID } from "../../constants/test-id";
+
 export function ReservistCardSkeleton() {
   return (
     <div
@@ -7,6 +9,7 @@ export function ReservistCardSkeleton() {
         bg-white/2
         p-4
       "
+      data-testid={RESERVIST_CARD_SKELETON_TEST_ID}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
