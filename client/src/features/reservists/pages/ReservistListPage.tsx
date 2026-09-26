@@ -2,9 +2,11 @@ import { useState } from "react";
 import ReservistListHeader from "../components/ui/list/ReservistListHeader";
 import useGetReservists from "../hooks/useGetReservists";
 import ReservistListPanel from "../components/ui/list/ReservistListPanel";
+import useDebounce from "../hooks/useDebounce";
 
 const ReservistListPage = () => {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce({ delay: 500, value: search });
 
   const {
     reservists,
@@ -15,7 +17,7 @@ const ReservistListPage = () => {
     hasNextPage,
     fetchNextPage,
     refetch,
-  } = useGetReservists(search);
+  } = useGetReservists(debouncedSearch);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-950">
