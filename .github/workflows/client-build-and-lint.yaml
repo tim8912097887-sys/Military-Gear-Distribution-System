@@ -1,4 +1,5 @@
 name: Client-Build-and-Lint
+
 on:
   pull_request:
     branches:
@@ -10,13 +11,35 @@ on:
     paths:
       - "client/**"
       - ".github/workflows/client-build-and-lint.yaml"
+
 permissions:
   contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' }}
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      client: ${{ steps.filter.outputs.client }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check for file changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            client:
+              - 'client/**'
+              - '.github/workflows/client-build-and-lint.yaml'
+
   build-and-lint-client:
+    needs: changes
+    if: ${{ needs.changes.outputs.client == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,13 +50,33 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
       - name: Initialize Environment
         uses: ./.github/actions/setup-node-and-dependency
         with:
           node-version: ${{ matrix.node-version }}
           pnpm-version: 10.26.1
           working-directory: ./client
+
       - name: Run Build
         run: pnpm run build
+
       - name: Run Lint
         run: pnpm run lint
+
+  client-check-status:
+    needs: [changes, build-and-lint-client]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate Status
+        run: |
+          BUILD_RESULT="${{ needs.build-and-lint-client.result }}"
+
+          if [ "$BUILD_RESULT" = "success" ] || [ "$BUILD_RESULT" = "skipped" ]; then
+            echo "Client checks passed or were safely skipped."
+            exit 0
+          else
+            echo "Client build/lint failed!"
+            exit 1
+          fi
