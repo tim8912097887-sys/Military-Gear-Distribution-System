@@ -3,9 +3,7 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - "server/**"
-      - ".github/workflows/server-integration-test.yaml"
+      - feat/server
 permissions:
   contents: read
 concurrency:
