@@ -1,16 +1,39 @@
 name: Client-Test
+
 on:
   pull_request:
     branches:
       - main
       - feat/client
+
 permissions:
   contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' }}
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      client: ${{ steps.filter.outputs.client }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check for file changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            client:
+              - 'client/**'
+              - '.github/workflows/client-test.yaml'
+
   test-client:
+    needs: changes
+    if: ${{ needs.changes.outputs.client == 'true' }}
     runs-on: ubuntu-latest
     env:
       VITE_API_BASE_URL: http://localhost:3000
@@ -20,11 +43,30 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
       - name: Initialize Environment
         uses: ./.github/actions/setup-node-and-dependency
         with:
           node-version: 22
           pnpm-version: 10.26.1
           working-directory: ./client
+
       - name: Run Tests
         run: pnpm run test
+
+  client-test-status:
+    needs: [changes, test-client]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate Status
+        run: |
+          TEST_RESULT="${{ needs.test-client.result }}"
+
+          if [ "$TEST_RESULT" = "success" ] || [ "$TEST_RESULT" = "skipped" ]; then
+            echo "Client tests passed or were safely skipped."
+            exit 0
+          else
+            echo "Client tests failed!"
+            exit 1
+          fi
