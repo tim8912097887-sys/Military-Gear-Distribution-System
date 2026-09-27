@@ -6,19 +6,19 @@ import {
   paginationResponse,
 } from "./factory";
 
+export const basedUrl =
+  import.meta.env.VITE_API_BASE_URL + "/api/v1/reservists";
+
 export const handlers = [
-  http.get("http://localhost:3000/api/v1/reservists", () => {
+  http.get(basedUrl, () => {
     return HttpResponse.json(successResponse(paginationResponse([], {})));
   }),
 
-  http.get("http://localhost:3000/api/v1/reservists/:reservistId", () => {
+  http.get(`${basedUrl}/:reservistId`, () => {
     return HttpResponse.json(successResponse(buildReservist()));
   }),
 
-  http.post(
-    "http://localhost:3000/api/v1/reservists/:reservistId/check-in",
-    () => {
-      return HttpResponse.json(successResponse(buildCheckedInReservist()));
-    },
-  ),
+  http.post(`${basedUrl}/:reservistId/check-in`, () => {
+    return HttpResponse.json(successResponse(buildCheckedInReservist()));
+  }),
 ];
