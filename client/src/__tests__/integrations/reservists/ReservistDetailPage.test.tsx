@@ -15,6 +15,7 @@ import { customRender } from "../../utils/reservists/render";
 import ReservistDetailPage from "../../../features/reservists/pages/ReservistDetailPage";
 import { formatDateTime } from "../../../features/reservists/utils/format-date-time";
 import { ToastContainer } from "react-toastify";
+import { basedUrl } from "../../utils/reservists/http";
 
 describe("ReservistDetailPage", () => {
   describe("Success Load", () => {
@@ -22,7 +23,7 @@ describe("ReservistDetailPage", () => {
       // Arrange
       const checkInReservist = buildCheckedInReservist();
       server.use(
-        http.get("http://localhost:3000/api/v1/reservists/:reservistId", () => {
+        http.get(`${basedUrl}/:reservistId`, () => {
           return HttpResponse.json(successResponse(checkInReservist));
         }),
       );
@@ -70,7 +71,7 @@ describe("ReservistDetailPage", () => {
     it("when the reservist is not found then displays 'Reservist not found'", async () => {
       // Arrange
       server.use(
-        http.get("http://localhost:3000/api/v1/reservists/:reservistId", () => {
+        http.get(`${basedUrl}/:reservistId`, () => {
           return HttpResponse.json(
             errorResponse({
               code: "RESERVIST_NOT_FOUND",
@@ -101,7 +102,7 @@ describe("ReservistDetailPage", () => {
     it("when the reservist load fails then displays initial error message", async () => {
       // Arrange
       server.use(
-        http.get("http://localhost:3000/api/v1/reservists/:reservistId", () => {
+        http.get(`${basedUrl}/:reservistId`, () => {
           return HttpResponse.json(
             errorResponse({ code: "DB_ERROR", detail: "Database error" }),
             { status: 500 },
@@ -153,15 +154,12 @@ describe("ReservistDetailPage", () => {
     it("when reservist check in fails then displays check in error toast", async () => {
       // Arrange
       server.use(
-        http.post(
-          "http://localhost:3000/api/v1/reservists/:reservistId/check-in",
-          () => {
-            return HttpResponse.json(
-              errorResponse({ code: "DB_ERROR", detail: "Database error" }),
-              { status: 500 },
-            );
-          },
-        ),
+        http.post(`${basedUrl}/:reservistId/check-in`, () => {
+          return HttpResponse.json(
+            errorResponse({ code: "DB_ERROR", detail: "Database error" }),
+            { status: 500 },
+          );
+        }),
       );
 
       // Act
@@ -191,22 +189,19 @@ describe("ReservistDetailPage", () => {
       const reservist = buildReservist();
       const checkedInDate = new Date().toISOString();
       server.use(
-        http.get("http://localhost:3000/api/v1/reservists/:reservistId", () => {
+        http.get(`${basedUrl}/:reservistId`, () => {
           return HttpResponse.json(successResponse(reservist));
         }),
       );
       server.use(
-        http.post(
-          "http://localhost:3000/api/v1/reservists/:reservistId/check-in",
-          () => {
-            return HttpResponse.json(
-              successResponse({
-                ...reservist,
-                checkedInAt: checkedInDate,
-              }),
-            );
-          },
-        ),
+        http.post(`${basedUrl}/:reservistId/check-in`, () => {
+          return HttpResponse.json(
+            successResponse({
+              ...reservist,
+              checkedInAt: checkedInDate,
+            }),
+          );
+        }),
       );
 
       // Act
