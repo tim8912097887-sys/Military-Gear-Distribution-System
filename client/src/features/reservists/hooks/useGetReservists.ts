@@ -1,10 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import {
-  INCREMENT_LIMIT,
-  INITIAL_LIMIT,
-  reservistKeys,
-} from "../constants/key";
 import { listReservists } from "../api/query/query";
+import { reservistKeys } from "../constants/key";
+import { INCREMENT_LIMIT, INITIAL_LIMIT } from "../constants/limit";
 
 const useGetReservists = (search: string) => {
   const {

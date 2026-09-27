@@ -1,4 +1,7 @@
-import type { ReservistView } from "../../../features/reservists/types";
+import type {
+  ListReservistsResponse,
+  ReservistView,
+} from "../../../features/reservists/types";
 
 const RANKS = [
   "Private",
@@ -58,4 +61,19 @@ export function buildCheckedInReservists(
 /** A syntactically valid id that no seeded reservist has. */
 export function unknownReservistId(): string {
   return crypto.randomUUID();
+}
+
+export function paginationResponse(
+  reservists: ReservistView[],
+  pagination: Partial<ListReservistsResponse["pagination"]>,
+): ListReservistsResponse {
+  return {
+    reservists,
+    pagination: {
+      total: pagination.total ?? 0,
+      limit: pagination.limit ?? 0,
+      nextCursor: pagination.nextCursor ?? null,
+      hasMore: pagination.hasMore ?? false,
+    },
+  };
 }
