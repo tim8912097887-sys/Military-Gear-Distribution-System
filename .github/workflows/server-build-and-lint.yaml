@@ -16,7 +16,24 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' }}
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Check for file changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            server:
+              - 'server/**'
+              - '.github/workflows/server-build-and-lint.yaml'
   build-and-lint-server:
+    needs: changes
+    if: ${{ needs.changes.outputs.server == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,3 +54,19 @@ jobs:
         run: pnpm run build
       - name: Run Lint
         run: pnpm run lint
+  server-check-status:
+    needs: [changes, build-and-lint-server]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate Status
+        run: |
+          BUILD_RESULT="${{ needs.build-and-lint-server.result }}"
+
+          if [ "$BUILD_RESULT" = "success" ] || [ "$BUILD_RESULT" = "skipped" ]; then
+            echo "Server checks passed or were safely skipped."
+            exit 0
+          else
+            echo "Server build/lint failed!"
+            exit 1
+          fi
