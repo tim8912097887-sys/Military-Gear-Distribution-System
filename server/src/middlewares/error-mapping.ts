@@ -1,4 +1,5 @@
 import type { ApiError } from '../applications/error/api.js';
+import { BadRequestError } from '../applications/error/bad-request.js';
 import { NotFoundError } from '../applications/error/not-found.js';
 import { ServerConflictError } from '../applications/error/server-conflict.js';
 import type { DomainError } from '../domains/errors/domain.js';
@@ -8,6 +9,7 @@ import { CustodyCreationError } from '../domains/gears/errors/custody-creation.j
 import { InsufficientHoldingError } from '../domains/gears/errors/insufficient-holding.js';
 import { InsufficientStockError } from '../domains/gears/errors/insufficient-stock.js';
 import { InventoryItemNotFoundError } from '../domains/gears/errors/inventory-item-not-found.js';
+import { ReservistNotCheckedInError } from '../domains/gears/errors/reservist-not-checked-in.js';
 import { SerializedItemNotFoundError } from '../domains/gears/errors/serialized-item-not-found.js';
 import { CheckInConflictError } from '../domains/reservists/errors/check-in-conflict.js';
 import { ReservistNotFoundError } from '../domains/reservists/errors/reservist-not-found.js';
@@ -31,7 +33,9 @@ export const mapDomainErrorToApiError = (error: DomainError): ApiError | undefin
     return new ServerConflictError(error.message);
   } else if (error instanceof CheckInConflictError) {
     return new ServerConflictError(error.message);
+  } else if (error instanceof ReservistNotCheckedInError) {
+    return new BadRequestError(error.message);
   } else {
-    return;
+    return undefined;
   }
 };

@@ -78,16 +78,6 @@ export interface ReturnedSerializedResult {
   newStatus: SerializedStatus;
 }
 
-export interface IssueGearResult {
-  reservistId: string;
-  issued: { bulk: IssuedBulkResult[]; serialized: IssuedSerializedResult[] };
-}
-
-export interface ReturnGearResult {
-  reservistId: string;
-  returned: { bulk: ReturnedBulkResult[]; serialized: ReturnedSerializedResult[] };
-}
-
 export type ResolvedIssueBulk = {
   line: BulkLineInput;
   inventoryItem: InventoryItem;
@@ -126,3 +116,34 @@ export type ValidatedReturnRequest = {
   bulkLines: ResolvedReturnBulk[];
   serializedLines: ResolvedReturnSerialized[];
 };
+
+export interface GearAvailabilityResult {
+  categoryId: string;
+  categoryName: string;
+  trackingType: 'BULK' | 'SERIALIZED';
+  sizes: GearAvailabilitySizeResult[];
+}
+
+export type GearAvailabilitySizeResult =
+  | {
+      categoryId: string;
+      inventoryItemId: string;
+      size: string | null;
+      availableQuantity: number;
+    }
+  | {
+      categoryId: string;
+      serializedItemId: string;
+      serialNumber: string;
+      size: string | null;
+      availableQuantity: 1;
+    };
+
+export interface GearHistoryResult {
+  history: HistoryRow[];
+  pagination: {
+    total: number;
+    limit: number;
+    hasMore: boolean;
+  };
+}

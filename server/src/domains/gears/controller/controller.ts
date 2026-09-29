@@ -6,10 +6,10 @@ import {
   type ReservistIdParams,
 } from '../../reservists/controller/dto.js';
 import {
-  getGearQuerySchema,
+  getGearHistoryQuerySchema,
   issueGearBodySchema,
   returnGearBodySchema,
-  type GetGearQuery,
+  type GetGearHistoryQuery,
   type IssueGearBody,
   type ReturnGearBody,
 } from './dto.js';
@@ -23,11 +23,8 @@ export class GearController {
     const { reservistId } = schemaValidator<ReservistIdParams>(reservistIdParamsSchema)({
       reservistId: id,
     });
-    const query = schemaValidator<GetGearQuery>(getGearQuerySchema)(
-      req.query as unknown as GetGearQuery,
-    );
 
-    const data = await this.gearService.getGear(reservistId, query);
+    const data = await this.gearService.getGear(reservistId);
     this.successJson(res, data);
   };
 
@@ -38,7 +35,7 @@ export class GearController {
     });
     const body = schemaValidator<IssueGearBody>(issueGearBodySchema)(req.body);
 
-    const { data } = await this.gearService.issue(reservistId, body);
+    const data = await this.gearService.issue(reservistId, body);
     this.successJson(res, data);
   };
 
@@ -49,10 +46,23 @@ export class GearController {
     });
     const body = schemaValidator<ReturnGearBody>(returnGearBodySchema)(req.body);
 
-    const { data } = await this.gearService.returnGear(reservistId, body);
+    const data = await this.gearService.returnGear(reservistId, body);
     this.successJson(res, data);
   };
 
+  getGearHistory = async (req: Request, res: Response): Promise<void> => {
+    const id = req.params.reservistId as string;
+    const { reservistId } = schemaValidator<ReservistIdParams>(reservistIdParamsSchema)({
+      reservistId: id,
+    });
+
+    const query = schemaValidator<GetGearHistoryQuery>(getGearHistoryQuerySchema)(
+      req.query as unknown as GetGearHistoryQuery,
+    );
+
+    const data = await this.gearService.getGearHistory(reservistId, query);
+    this.successJson(res, data);
+  };
   private successJson<T>(res: Response, data: T): void {
     res.status(200).json(successResponse(data));
   }
