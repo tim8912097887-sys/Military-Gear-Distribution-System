@@ -32,7 +32,7 @@ export const initializeApp = (): express.Application => {
   // Routes
   const v1Router = Router();
   v1Router.use('/reservists', reservistRouter);
-  v1Router.use('/gears', gearRouter);
+  v1Router.use('/reservists/:reservistId/gears', gearRouter);
   app.use('/api/v1', v1Router);
 
   // Error Handler

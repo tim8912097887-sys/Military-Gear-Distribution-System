@@ -65,25 +65,11 @@ export const returnGearBodySchema = z
     }
   });
 
-export const getGearQuerySchema = z.object({
-  include: z
-    .string()
-    .optional()
-    .transform(
-      (v) =>
-        new Set(
-          (v ?? '')
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean),
-        ),
-    )
-    .refine((set) => [...set].every((s) => s === 'history' || s === 'allowance'), {
-      message: "include supports 'history' and 'allowance'",
-    }),
-  historyLimit: z.coerce.number().int().min(1).max(200).default(50),
+export const getGearHistoryQuerySchema = z.object({
+  offset: z.coerce.number().int().min(0).default(0),
+  limit: z.coerce.number().int().min(1).max(20).default(5),
 });
 
 export type IssueGearBody = z.infer<typeof issueGearBodySchema>;
 export type ReturnGearBody = z.infer<typeof returnGearBodySchema>;
-export type GetGearQuery = z.infer<typeof getGearQuerySchema>;
+export type GetGearHistoryQuery = z.infer<typeof getGearHistoryQuerySchema>;

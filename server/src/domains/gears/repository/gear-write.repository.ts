@@ -1,6 +1,5 @@
-import { and, asc, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, eq, gte, isNull, sql } from 'drizzle-orm';
 import type { NodePgDatabase, NodePgTransaction } from 'drizzle-orm/node-postgres';
-import { alias } from 'drizzle-orm/pg-core';
 import {
   gearCategories,
   type GearCategory,
@@ -9,28 +8,20 @@ import {
   inventoryItems,
   type InventoryItem,
 } from '../../../infrastructure/db/schema/inventory-items.js';
-import {
-  serializedItems,
-  type SerializedItem,
-} from '../../../infrastructure/db/schema/serialized-items.js';
+import { serializedItems } from '../../../infrastructure/db/schema/serialized-items.js';
 import { reservistBulkGear } from '../../../infrastructure/db/schema/reservist-bulk-gear.js';
 import { reservistSerializedGear } from '../../../infrastructure/db/schema/reservist-serialized-gear.js';
 import { distributionLogs } from '../../../infrastructure/db/schema/distribution-logs.js';
-import { reservists } from '../../../infrastructure/db/schema/reservists.js';
+import { reservists, type Reservist } from '../../../infrastructure/db/schema/reservists.js';
 import type {
-  HeldBulkRow,
-  HeldSerializedRow,
-  HistoryRow,
   IssuedBulkResult,
   IssuedSerializedResult,
-  IssueGearResult,
   ResolvedIssueBulk,
   ResolvedIssueSerialized,
   ResolvedReturnBulk,
   ResolvedReturnSerialized,
   ReturnedBulkResult,
   ReturnedSerializedResult,
-  ReturnGearResult,
   ValidatedIssueRequest,
   ValidatedReturnRequest,
 } from './dto.js';
@@ -43,20 +34,25 @@ import { CustodyCreationError } from '../errors/custody-creation.js';
 import { InsufficientHoldingError } from '../errors/insufficient-holding.js';
 import { CONDITION_TO_STATUS, type IssueGearInput, type ReturnGearInput } from '../service/dto.js';
 import { mergeBulkLines } from '../utils/gear-lines.js';
+import { ReservistNotCheckedInError } from '../errors/reservist-not-checked-in.js';
 
 type DatabaseExecutor =
   NodePgDatabase | NodePgTransaction<Record<string, never>, Record<string, never>>;
 
-export class GearRepository {
+export class GearWriteRepository {
   constructor(private readonly db: DatabaseExecutor) {}
 
-  async issueGear(reservistId: string, body: IssueGearInput): Promise<IssueGearResult | undefined> {
+  async issueGear(reservistId: string, body: IssueGearInput): Promise<Reservist | undefined> {
     return this.db.transaction(async (tx) => {
-      const repository = new GearRepository(tx);
+      const repository = new GearWriteRepository(tx);
 
       const reservist = await repository.lockReservist(reservistId);
 
       if (!reservist) return undefined;
+
+      if (!reservist.checkedInAt) {
+        throw new ReservistNotCheckedInError(reservist.id);
+      }
 
       // Resolve and validate the entire request.
       const validated = await repository.validateIssueRequest(body);
@@ -65,58 +61,43 @@ export class GearRepository {
       await repository.validateIssueAllowances(reservistId, validated);
 
       // Perform mutations using the already-resolved entities.
-      const issued: IssueGearResult['issued'] = {
-        bulk: [],
-        serialized: [],
-      };
-
       for (const resolved of validated.bulkLines) {
-        issued.bulk.push(await repository.issueBulk(reservistId, resolved));
+        await repository.issueBulk(reservistId, resolved);
       }
 
       for (const resolved of validated.serializedLines) {
-        issued.serialized.push(await repository.issueSerialized(reservistId, resolved));
+        await repository.issueSerialized(reservistId, resolved);
       }
 
-      return {
-        reservistId,
-        issued,
-      };
+      return reservist;
     });
   }
 
-  async returnGear(
-    reservistId: string,
-    body: ReturnGearInput,
-  ): Promise<ReturnGearResult | undefined> {
+  async returnGear(reservistId: string, body: ReturnGearInput): Promise<Reservist | undefined> {
     return this.db.transaction(async (tx) => {
-      const repository = new GearRepository(tx);
+      const repository = new GearWriteRepository(tx);
 
       const reservist = await repository.lockReservist(reservistId);
 
       if (!reservist) return undefined;
 
+      if (!reservist.checkedInAt) {
+        throw new ReservistNotCheckedInError(reservist.id);
+      }
+
       // Resolve and validate the complete return request.
       const validated = await repository.validateReturnRequest(reservistId, body);
 
       //  Mutate inventory using already-resolved entities.
-      const returned: ReturnGearResult['returned'] = {
-        bulk: [],
-        serialized: [],
-      };
-
       for (const resolved of validated.bulkLines) {
-        returned.bulk.push(await repository.returnBulk(reservistId, resolved));
+        await repository.returnBulk(reservistId, resolved);
       }
 
       for (const resolved of validated.serializedLines) {
-        returned.serialized.push(await repository.returnSerialized(reservistId, resolved));
+        await repository.returnSerialized(reservistId, resolved);
       }
 
-      return {
-        reservistId,
-        returned,
-      };
+      return reservist;
     });
   }
 
@@ -582,7 +563,7 @@ export class GearRepository {
     });
   }
 
-  async findCategoryById(id: string): Promise<GearCategory | undefined> {
+  private async findCategoryById(id: string): Promise<GearCategory | undefined> {
     const [row] = await this.db
       .select()
       .from(gearCategories)
@@ -591,21 +572,11 @@ export class GearRepository {
     return row;
   }
 
-  async findInventoryItemById(id: string): Promise<InventoryItem | undefined> {
+  private async findInventoryItemById(id: string): Promise<InventoryItem | undefined> {
     const [row] = await this.db
       .select()
       .from(inventoryItems)
       .where(eq(inventoryItems.id, id))
-      .limit(1);
-    return row;
-  }
-
-  /** Non-locking read, used while resolving request lines. */
-  async findSerializedItemBySerial(serialNumber: string): Promise<SerializedItem | undefined> {
-    const [row] = await this.db
-      .select()
-      .from(serializedItems)
-      .where(eq(serializedItems.serialNumber, serialNumber))
       .limit(1);
     return row;
   }
@@ -615,7 +586,7 @@ export class GearRepository {
   // already holds the reservist row lock)
   // ------------------------------------------------------------------
 
-  async sumBulkHeldByCategory(reservistId: string): Promise<Map<string, number>> {
+  private async sumBulkHeldByCategory(reservistId: string): Promise<Map<string, number>> {
     const rows = await this.db
       .select({
         categoryId: inventoryItems.categoryId,
@@ -629,7 +600,7 @@ export class GearRepository {
     return new Map(rows.map((r) => [r.categoryId, r.total]));
   }
 
-  async countSerializedHeldByCategory(reservistId: string): Promise<Map<string, number>> {
+  private async countSerializedHeldByCategory(reservistId: string): Promise<Map<string, number>> {
     const rows = await this.db
       .select({
         categoryId: serializedItems.categoryId,
@@ -652,7 +623,7 @@ export class GearRepository {
   // Bulk mutations
   // ------------------------------------------------------------------
 
-  async adjustStock(inventoryItemId: string, delta: number): Promise<number> {
+  private async adjustStock(inventoryItemId: string, delta: number): Promise<number> {
     const [row] = await this.db
       .update(inventoryItems)
       .set({ stockQuantity: sql`${inventoryItems.stockQuantity} + ${delta}` })
@@ -661,7 +632,7 @@ export class GearRepository {
     return row?.stockQuantity ?? 0;
   }
 
-  async findBulkHolding(
+  private async findBulkHolding(
     reservistId: string,
     inventoryItemId: string,
   ): Promise<{ id: string; quantity: number } | undefined> {
@@ -676,81 +647,5 @@ export class GearRepository {
       )
       .limit(1);
     return row;
-  }
-
-  // ------------------------------------------------------------------
-  // Read models
-  // ------------------------------------------------------------------
-
-  async listCategories(): Promise<GearCategory[]> {
-    return this.db.select().from(gearCategories).orderBy(asc(gearCategories.name));
-  }
-
-  async listHeldBulk(reservistId: string): Promise<HeldBulkRow[]> {
-    return this.db
-      .select({
-        inventoryItemId: reservistBulkGear.inventoryItemId,
-        size: inventoryItems.size,
-        quantity: reservistBulkGear.quantity,
-        categoryId: gearCategories.id,
-        categoryName: gearCategories.name,
-        issuedAt: reservistBulkGear.issuedAt,
-      })
-      .from(reservistBulkGear)
-      .innerJoin(inventoryItems, eq(inventoryItems.id, reservistBulkGear.inventoryItemId))
-      .innerJoin(gearCategories, eq(gearCategories.id, inventoryItems.categoryId))
-      .where(eq(reservistBulkGear.reservistId, reservistId))
-      .orderBy(asc(gearCategories.name), asc(inventoryItems.size));
-  }
-
-  async listHeldSerialized(reservistId: string): Promise<HeldSerializedRow[]> {
-    return this.db
-      .select({
-        custodyId: reservistSerializedGear.id,
-        serializedItemId: serializedItems.id,
-        serialNumber: serializedItems.serialNumber,
-        size: serializedItems.size,
-        categoryId: gearCategories.id,
-        categoryName: gearCategories.name,
-        issuedAt: reservistSerializedGear.issuedAt,
-      })
-      .from(reservistSerializedGear)
-      .innerJoin(serializedItems, eq(serializedItems.id, reservistSerializedGear.serializedItemId))
-      .innerJoin(gearCategories, eq(gearCategories.id, serializedItems.categoryId))
-      .where(
-        and(
-          eq(reservistSerializedGear.reservistId, reservistId),
-          isNull(reservistSerializedGear.returnedAt),
-        ),
-      )
-      .orderBy(asc(gearCategories.name), asc(serializedItems.serialNumber));
-  }
-
-  async listHistory(reservistId: string, limit: number): Promise<HistoryRow[]> {
-    // The log points at either a bulk SKU or a serialized item, so the
-    // category has to be reached through two independent join paths.
-    const bulkCategory = alias(gearCategories, 'bulk_category');
-    const serializedCategory = alias(gearCategories, 'serialized_category');
-
-    return this.db
-      .select({
-        id: distributionLogs.id,
-        actionType: distributionLogs.actionType,
-        quantity: distributionLogs.quantity,
-        categoryName: sql<
-          string | null
-        >`coalesce(${bulkCategory.name}, ${serializedCategory.name})`,
-        size: sql<string | null>`coalesce(${inventoryItems.size}, ${serializedItems.size})`,
-        serialNumber: serializedItems.serialNumber,
-        createdAt: distributionLogs.createdAt,
-      })
-      .from(distributionLogs)
-      .leftJoin(inventoryItems, eq(inventoryItems.id, distributionLogs.inventoryItemId))
-      .leftJoin(bulkCategory, eq(bulkCategory.id, inventoryItems.categoryId))
-      .leftJoin(serializedItems, eq(serializedItems.id, distributionLogs.serializedItemId))
-      .leftJoin(serializedCategory, eq(serializedCategory.id, serializedItems.categoryId))
-      .where(eq(distributionLogs.reservistId, reservistId))
-      .orderBy(desc(distributionLogs.createdAt))
-      .limit(limit);
   }
 }

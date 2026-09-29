@@ -4,9 +4,10 @@ import type { GearController } from '../controller/controller.js';
 export function createGearRouter(controller: GearController): Router {
   const router = Router({ mergeParams: true });
 
-  router.get('/reservists/:reservistId', controller.getGearForReservist);
-  router.post('/reservists/:reservistId/gear-issues', controller.issue);
-  router.post('/reservists/:reservistId/gear-returns', controller.returnGear);
+  router.get('', controller.getGearForReservist);
+  router.post('/issue', controller.issue);
+  router.post('/return', controller.returnGear);
+  router.get('/history', controller.getGearHistory);
 
   return router;
 }
