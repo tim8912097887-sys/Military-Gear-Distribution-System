@@ -4,14 +4,12 @@ import type { ReturnGearInput } from "../types";
 import { toast } from "react-toastify";
 import { reservistGearKeys } from "../constants/key";
 
-export function useReturnGear(
-  reservistId: string,
-  returnGearInput: ReturnGearInput,
-) {
+export function useReturnGear(reservistId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => returnGear(reservistId, returnGearInput),
+    mutationFn: (returnGearInput: ReturnGearInput) =>
+      returnGear(reservistId, returnGearInput),
 
     onSuccess: (updatedGearStatus) => {
       queryClient.setQueryData(

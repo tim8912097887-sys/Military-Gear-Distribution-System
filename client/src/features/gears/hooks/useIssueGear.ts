@@ -4,14 +4,12 @@ import type { IssueGearInput } from "../types";
 import { toast } from "react-toastify";
 import { reservistGearKeys } from "../constants/key";
 
-export function useIssueGear(
-  reservistId: string,
-  issueGearInput: IssueGearInput,
-) {
+export function useIssueGear(reservistId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => issueGear(reservistId, issueGearInput),
+    mutationFn: (issueGearInput: IssueGearInput) =>
+      issueGear(reservistId, issueGearInput),
 
     onSuccess: (updatedGearStatus) => {
       queryClient.setQueryData(
