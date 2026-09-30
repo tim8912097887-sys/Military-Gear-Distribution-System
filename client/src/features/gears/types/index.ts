@@ -1,4 +1,7 @@
-import type { ActionType, SerializedStatus } from '../../../infrastructure/db/schema/enums.js';
+type ActionType = "ISSUE" | "RETURN";
+
+export const RETURN_CONDITIONS = ["SERVICEABLE", "DAMAGED", "LOST"] as const;
+export type ReturnCondition = (typeof RETURN_CONDITIONS)[number];
 
 // Input
 export type BulkLineInput = {
@@ -30,20 +33,11 @@ export type GetGearHistoryInput = {
   limit: number;
 };
 
-export const CONDITION_TO_STATUS: Record<ReturnCondition, SerializedStatus> = {
-  SERVICEABLE: 'AVAILABLE',
-  DAMAGED: 'MAINTENANCE',
-  LOST: 'LOST',
-};
-
-export const RETURN_CONDITIONS = ['SERVICEABLE', 'DAMAGED', 'LOST'] as const;
-export type ReturnCondition = (typeof RETURN_CONDITIONS)[number];
-
 // Response
 export interface GearAvailabilityResponse {
   categoryId: string;
   categoryName: string;
-  trackingType: 'BULK' | 'SERIALIZED';
+  trackingType: "BULK" | "SERIALIZED";
   remainingAllowance: number;
   sizes: GearAvailabilitySizeResponse[];
 }
@@ -83,7 +77,7 @@ export interface HeldSerializedView {
 export interface GearAllowanceView {
   categoryId: string;
   categoryName: string;
-  trackingType: 'BULK' | 'SERIALIZED';
+  trackingType: "BULK" | "SERIALIZED";
   limit: number;
   held: number;
   remaining: number;

@@ -2,7 +2,7 @@ import { INCREMENT_LIMIT, INITIAL_LIMIT } from "../../../constants/limit";
 import ReservistListInitialError from "../../error/ReservistListInitialError";
 import ReservistNextPageError from "../../error/ReservistNextPageError";
 import { ReservistCardSkeleton } from "../../skeleton/ReservistCardSkeleton";
-import type { ReservistView } from "../../types";
+import type { ReservistView } from "../../../types";
 import ReservistList from "./ReservistList";
 import { SearchBar } from "./SearchBar";
 

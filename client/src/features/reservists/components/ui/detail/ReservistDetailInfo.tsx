@@ -1,6 +1,6 @@
-import InfoRow from "../../../../../components/ui/common/InfoRow";
+import InfoRow from "../../../../../common/components/ui/common/InfoRow";
 import { formatDateTime } from "../../../utils/format-date-time";
-import type { ReservistView } from "../../types";
+import type { ReservistView } from "../../../types";
 
 type ReservistDetailInfoProps = { reservist: ReservistView };
 
