@@ -34,25 +34,29 @@ export type GetGearHistoryInput = {
 };
 
 // Response
-export interface GearAvailabilityResponse {
-  categoryId: string;
-  categoryName: string;
-  trackingType: "BULK" | "SERIALIZED";
-  remainingAllowance: number;
-  sizes: GearAvailabilitySizeResponse[];
-}
-
-export type GearAvailabilitySizeResponse =
+export type GearAvailabilityResponse =
   | {
-      inventoryItemId: string;
-      size: string | null;
-      availableQuantity: number;
+      categoryId: string;
+      categoryName: string;
+      trackingType: "BULK";
+      remainingAllowance: number;
+      sizes: {
+        inventoryItemId: string;
+        size: string | null;
+        availableQuantity: number;
+      }[];
     }
   | {
-      serializedItemId: string;
-      serialNumber: string;
-      size: string | null;
-      availableQuantity: 1;
+      categoryId: string;
+      categoryName: string;
+      trackingType: "SERIALIZED";
+      remainingAllowance: number;
+      sizes: {
+        serializedItemId: string;
+        serialNumber: string;
+        size: string | null;
+        availableQuantity: 1;
+      }[];
     };
 
 export interface HeldBulkView {

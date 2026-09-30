@@ -4,7 +4,7 @@ import ReservistDetailSkeleton from "../components/skeleton/ReservistDetailSkele
 import ReservistDetailError from "../components/error/ReservistDetailError";
 import useGetReservist from "../hooks/useGetReservist";
 import { useCheckInReservist } from "../hooks/useCheckInReservist";
-import { reservistIdSchema } from "../schema/reservist-id";
+import { reservistIdSchema } from "../../../common/schema/reservist-id";
 import ReservistDetailIdError from "../components/error/ReservistDetailIdError";
 
 const ReservistDetailPage = () => {

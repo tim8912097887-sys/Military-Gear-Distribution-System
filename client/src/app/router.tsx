@@ -3,6 +3,7 @@ import App from "../App";
 import ReservistListPage from "../features/reservists/pages/ReservistListPage";
 import ReservistDetailPage from "../features/reservists/pages/ReservistDetailPage";
 import NotFoundPage from "../common/components/pages/NotFoundPage";
+import ReservistGearDistributionPage from "../features/gears/pages/ReservistGearDistributionPage";
 
 export const router = createBrowserRouter([
   {
@@ -16,6 +17,10 @@ export const router = createBrowserRouter([
       {
         path: "/reservists/:id",
         element: <ReservistDetailPage />,
+      },
+      {
+        path: "/reservists/:id/gears",
+        element: <ReservistGearDistributionPage />,
       },
     ],
   },
