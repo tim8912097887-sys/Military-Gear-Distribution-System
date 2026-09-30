@@ -8,7 +8,7 @@ import type {
   GearAllowanceView,
   GearAvailabilityResponse,
   GetGearHistoryInput,
-  GetGearResponse,
+  GearStatusResponse,
   HeldBulkView,
   HeldSerializedView,
   IssueGearInput,
@@ -22,7 +22,7 @@ export class GearService {
     private readonly reservistRepository: ReservistRepository,
   ) {}
 
-  async getGear(reservistId: string): Promise<GetGearResponse> {
+  async getGear(reservistId: string): Promise<GearStatusResponse> {
     const reservist = await this.reservistRepository.findById(reservistId);
     if (!reservist) {
       throw new ReservistNotFoundError(reservistId);
@@ -33,7 +33,7 @@ export class GearService {
     return result;
   }
 
-  async issue(reservistId: string, body: IssueGearInput): Promise<GetGearResponse> {
+  async issue(reservistId: string, body: IssueGearInput): Promise<GearStatusResponse> {
     const reservist = await this.gearWriteRepository.issueGear(reservistId, body);
     if (!reservist) {
       throw new ReservistNotFoundError(reservistId);
@@ -43,7 +43,7 @@ export class GearService {
     return updatedGear;
   }
 
-  async returnGear(reservistId: string, body: ReturnGearInput): Promise<GetGearResponse> {
+  async returnGear(reservistId: string, body: ReturnGearInput): Promise<GearStatusResponse> {
     const reservist = await this.gearWriteRepository.returnGear(reservistId, body);
     if (!reservist) {
       throw new ReservistNotFoundError(reservistId);
@@ -101,9 +101,13 @@ export class GearService {
     const allowance = this.buildAllowance(categories, normalizeBulk, normalizeSerialized);
     const available = await this.buildAvailability(allowance);
 
-    const result: GetGearResponse = {
-      reservistId: reservist.id,
-      checkedInAt: reservist.checkedInAt?.toISOString() ?? null,
+    const result: GearStatusResponse = {
+      reservist: {
+        id: reservist.id,
+        name: reservist.name,
+        militaryRank: reservist.militaryRank,
+        checkedInAt: reservist.checkedInAt ? reservist.checkedInAt.toISOString() : null,
+      },
       holdings: {
         bulk: normalizeBulk,
         serialized: normalizeSerialized,

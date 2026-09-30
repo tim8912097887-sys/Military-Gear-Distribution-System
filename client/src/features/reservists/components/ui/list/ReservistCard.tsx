@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import type { ReservistView } from "../../types";
+import type { ReservistView } from "../../../types";
 import { ChevronRight } from "lucide-react";
 import { ReservistStatusBadge } from "../ReservistStatusBadge";
 

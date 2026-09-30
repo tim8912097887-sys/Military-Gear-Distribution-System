@@ -1,4 +1,4 @@
-import type { ReservistView } from "../../types";
+import type { ReservistView } from "../../../types";
 import { ReservistStatusBadge } from "../ReservistStatusBadge";
 
 type ReservistDetailHeaderProps = {

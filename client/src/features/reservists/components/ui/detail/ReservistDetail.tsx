@@ -1,4 +1,4 @@
-import type { ReservistView } from "../../types";
+import type { ReservistView } from "../../../types";
 import ReservistDetailActions from "./ReservistDetailActions";
 import ReservistDetailHeader from "./ReservistDetailHeader";
 import ReservistDetailInfo from "./ReservistDetailInfo";

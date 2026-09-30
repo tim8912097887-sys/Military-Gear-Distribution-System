@@ -1,8 +1,5 @@
-import type {
-  ApiSuccessResponse,
-  ListReservistsResponse,
-  ReservistView,
-} from "../../types/index";
+import type { ApiSuccessResponse } from "../../../../common/types/response/response";
+import type { ListReservistsResponse, ReservistView } from "../../types/index";
 import { reservistClient } from "../client/client";
 
 export type ListReservistsParams = {

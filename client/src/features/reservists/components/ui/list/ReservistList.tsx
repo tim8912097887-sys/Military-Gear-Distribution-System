@@ -1,5 +1,5 @@
 import ReservistCard from "./ReservistCard";
-import type { ReservistView } from "../../types";
+import type { ReservistView } from "../../../types";
 
 type ReservistListProps = {
   reservists: ReservistView[];

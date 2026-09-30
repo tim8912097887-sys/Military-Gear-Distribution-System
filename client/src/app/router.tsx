@@ -2,7 +2,7 @@ import { createBrowserRouter } from "react-router";
 import App from "../App";
 import ReservistListPage from "../features/reservists/pages/ReservistListPage";
 import ReservistDetailPage from "../features/reservists/pages/ReservistDetailPage";
-import NotFoundPage from "../components/pages/NotFoundPage";
+import NotFoundPage from "../common/components/pages/NotFoundPage";
 
 export const router = createBrowserRouter([
   {

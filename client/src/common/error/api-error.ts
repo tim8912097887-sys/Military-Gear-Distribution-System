@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiFailure } from "../../types/index";
+import type { ApiFailure } from "../types/response/response";
 
 export class ApiError extends Error {
   readonly code?: string;

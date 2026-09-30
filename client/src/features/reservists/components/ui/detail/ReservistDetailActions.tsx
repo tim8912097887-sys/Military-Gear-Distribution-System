@@ -1,5 +1,5 @@
-import Button from "../../../../../components/ui/common/Button";
-import type { ReservistView } from "../../types";
+import Button from "../../../../../common/components/ui/common/Button";
+import type { ReservistView } from "../../../types";
 
 type ReservistDetailActionsProps = {
   isCheckingIn: boolean;

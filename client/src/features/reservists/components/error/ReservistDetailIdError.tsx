@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import Button from "../../../../components/ui/common/Button";
+import Button from "../../../../common/components/ui/common/Button";
 
 const ReservistDetailIdError = () => {
   return (

@@ -1,6 +1,6 @@
 import { Link } from "react-router";
-import Button from "../../../../components/ui/common/Button";
-import { ApiError } from "../../api/error/api-error";
+import Button from "../../../../common/components/ui/common/Button";
+import { ApiError } from "../../../../common/error/api-error";
 
 type ReservistDetailErrorProps = {
   error?: unknown;

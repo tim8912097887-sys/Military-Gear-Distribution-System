@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { ApiError } from "../api/error/api-error";
 import { getReservist } from "../api/query/query";
 import { reservistKeys } from "../constants/key";
+import { ApiError } from "../../../common/error/api-error";
 
 const useGetReservist = (reservistId: string) => {
   return useQuery({

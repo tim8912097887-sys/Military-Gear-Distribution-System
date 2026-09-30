@@ -1,4 +1,4 @@
-import Button from "../../../../components/ui/common/Button";
+import Button from "../../../../common/components/ui/common/Button";
 
 type ReservistNextPageErrorProps = {
   onRetry: () => void;
