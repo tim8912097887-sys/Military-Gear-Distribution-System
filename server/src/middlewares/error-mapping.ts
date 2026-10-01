@@ -9,7 +9,10 @@ import { CustodyCreationError } from '../domains/gears/errors/custody-creation.j
 import { InsufficientHoldingError } from '../domains/gears/errors/insufficient-holding.js';
 import { InsufficientStockError } from '../domains/gears/errors/insufficient-stock.js';
 import { InventoryItemNotFoundError } from '../domains/gears/errors/inventory-item-not-found.js';
+import { InventoryLockTimeoutError } from '../domains/gears/errors/inventory-lock-timeout.js';
+import { ReservistLockedError } from '../domains/gears/errors/reservist-locked.js';
 import { ReservistNotCheckedInError } from '../domains/gears/errors/reservist-not-checked-in.js';
+import { SerializedItemLockedError } from '../domains/gears/errors/serialized-item-locked.js';
 import { SerializedItemNotFoundError } from '../domains/gears/errors/serialized-item-not-found.js';
 import { CheckInConflictError } from '../domains/reservists/errors/check-in-conflict.js';
 import { ReservistNotFoundError } from '../domains/reservists/errors/reservist-not-found.js';
@@ -35,6 +38,12 @@ export const mapDomainErrorToApiError = (error: DomainError): ApiError | undefin
     return new ServerConflictError(error.message);
   } else if (error instanceof ReservistNotCheckedInError) {
     return new BadRequestError(error.message);
+  } else if (error instanceof ReservistLockedError) {
+    return new ServerConflictError(error.message);
+  } else if (error instanceof SerializedItemLockedError) {
+    return new ServerConflictError(error.message);
+  } else if (error instanceof InventoryLockTimeoutError) {
+    return new ServerConflictError(error.message);
   } else {
     return undefined;
   }

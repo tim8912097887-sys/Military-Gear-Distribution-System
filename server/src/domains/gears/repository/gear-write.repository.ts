@@ -35,6 +35,10 @@ import { InsufficientHoldingError } from '../errors/insufficient-holding.js';
 import { CONDITION_TO_STATUS, type IssueGearInput, type ReturnGearInput } from '../service/dto.js';
 import { mergeBulkLines } from '../utils/gear-lines.js';
 import { ReservistNotCheckedInError } from '../errors/reservist-not-checked-in.js';
+import { isLockNotAvailableError } from '../utils/error.js';
+import { ReservistLockedError } from '../errors/reservist-locked.js';
+import { SerializedItemLockedError } from '../errors/serialized-item-locked.js';
+import { InventoryLockTimeoutError } from '../errors/inventory-lock-timeout.js';
 
 type DatabaseExecutor =
   NodePgDatabase | NodePgTransaction<Record<string, never>, Record<string, never>>;
@@ -391,34 +395,61 @@ export class GearWriteRepository {
   }
 
   private async lockReservist(id: string) {
-    const [row] = await this.db
-      .select()
-      .from(reservists)
-      .where(eq(reservists.id, id))
-      .limit(1)
-      .for('update');
-    return row;
+    try {
+      const [row] = await this.db
+        .select()
+        .from(reservists)
+        .where(eq(reservists.id, id))
+        .limit(1)
+        .for('update', { noWait: true });
+      return row;
+    } catch (error) {
+      if (isLockNotAvailableError(error)) {
+        throw new ReservistLockedError(id);
+      }
+      throw error;
+    }
   }
 
-  private async decreaseStock(inventoryItemId: string, quantity: number) {
-    const [row] = await this.db
-      .update(inventoryItems)
-      .set({ stockQuantity: sql`${inventoryItems.stockQuantity} - ${quantity}` })
-      .where(
-        and(eq(inventoryItems.id, inventoryItemId), gte(inventoryItems.stockQuantity, quantity)),
-      )
-      .returning({ stockQuantity: inventoryItems.stockQuantity });
-    return row?.stockQuantity;
+  private async decreaseStock(
+    inventoryItemId: string,
+    quantity: number,
+    timeoutMs = 3000,
+  ): Promise<number | undefined> {
+    await this.db.execute(sql.raw(`SET LOCAL lock_timeout = '${timeoutMs}ms'`));
+    try {
+      const [row] = await this.db
+        .update(inventoryItems)
+        .set({ stockQuantity: sql`${inventoryItems.stockQuantity} - ${quantity}` })
+        .where(
+          and(eq(inventoryItems.id, inventoryItemId), gte(inventoryItems.stockQuantity, quantity)),
+        )
+        .returning({ stockQuantity: inventoryItems.stockQuantity });
+      return row?.stockQuantity;
+    } catch (error) {
+      if (isLockNotAvailableError(error)) {
+        throw new InventoryLockTimeoutError();
+      }
+      throw error;
+    }
   }
 
-  private async lockInventoryItem(inventoryItemId: string) {
-    const [row] = await this.db
-      .select({ id: inventoryItems.id })
-      .from(inventoryItems)
-      .where(eq(inventoryItems.id, inventoryItemId))
-      .limit(1)
-      .for('update');
-    return row;
+  private async lockInventoryItem(inventoryItemId: string, timeoutMs = 3000) {
+    await this.db.execute(sql.raw(`SET LOCAL lock_timeout = '${timeoutMs}ms'`));
+    try {
+      const [row] = await this.db
+        .select({ id: inventoryItems.id })
+        .from(inventoryItems)
+        .where(eq(inventoryItems.id, inventoryItemId))
+        .limit(1)
+        .for('update');
+      return row;
+    } catch (error) {
+      if (isLockNotAvailableError(error)) {
+        throw new InventoryLockTimeoutError();
+      }
+      throw error;
+    }
   }
 
   private async removeBulkHolding(id: string, currentQuantity: number, quantity: number) {
@@ -508,18 +539,26 @@ export class GearWriteRepository {
   }
 
   private async lockAvailableSerializedItem(serialNumber: string) {
-    const [row] = await this.db
-      .select()
-      .from(serializedItems)
-      .where(
-        and(
-          eq(serializedItems.serialNumber, serialNumber),
-          eq(serializedItems.status, 'AVAILABLE'),
-        ),
-      )
-      .limit(1)
-      .for('update');
-    return row;
+    try {
+      const [row] = await this.db
+        .select()
+        .from(serializedItems)
+        .where(
+          and(
+            eq(serializedItems.serialNumber, serialNumber),
+            eq(serializedItems.status, 'AVAILABLE'),
+          ),
+        )
+        .limit(1)
+        .for('update', { noWait: true });
+
+      return row;
+    } catch (error) {
+      if (isLockNotAvailableError(error)) {
+        throw new SerializedItemLockedError(serialNumber);
+      }
+      throw error;
+    }
   }
 
   private async markSerializedIssued(serializedItemId: string) {
