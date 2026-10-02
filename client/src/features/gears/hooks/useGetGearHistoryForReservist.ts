@@ -16,6 +16,7 @@ export function useGetGearHistoryForReservist(reservistId: string) {
 
       return response;
     },
+    staleTime: 90_000,
   });
 
   return { data, offset, setOffset, isPending, isError, error };

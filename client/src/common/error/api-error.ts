@@ -29,10 +29,8 @@ export function normalizeApiError(error: unknown): ApiError {
     const data = error.response?.data as ApiFailure | undefined;
 
     return new ApiError(
-      data?.error?.message ??
-        (status
-          ? `Request failed with status ${status}`
-          : "Unable to connect to the server"),
+      data?.error?.detail ??
+        (status ? "Operation failed" : "Unable to connect to the server"),
       {
         code: data?.error?.code,
         status,

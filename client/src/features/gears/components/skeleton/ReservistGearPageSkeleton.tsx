@@ -11,11 +11,9 @@ const ReservistGearPageSkeleton = () => {
     <div className="space-y-6">
       <ReservistGearPageHeaderSkeleton />
 
-      <GearHoldingSectionSkeleton />
-
-      <GearAllowanceSectionSkeleton />
-
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 space-y-6">
+        <GearHoldingSectionSkeleton />
+        <GearAllowanceSectionSkeleton />
         <IssueGearPanelSkeleton />
         <ReturnGearPanelSkeleton />
       </div>

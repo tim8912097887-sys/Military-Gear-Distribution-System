@@ -3,6 +3,7 @@ import { returnGear } from "../api/query/query";
 import type { ReturnGearInput } from "../types";
 import { toast } from "react-toastify";
 import { reservistGearKeys } from "../constants/key";
+import { ApiError } from "../../../common/error/api-error";
 
 export function useReturnGear(reservistId: string) {
   const queryClient = useQueryClient();
@@ -23,7 +24,15 @@ export function useReturnGear(reservistId: string) {
     },
 
     onError: (error) => {
-      toast.error(error.message);
+      // Invalidate the gear status query to ensure the UI reflects the latest state
+      queryClient.invalidateQueries({
+        queryKey: reservistGearKeys.all(reservistId),
+      });
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+        return;
+      }
+      toast.error("An unexpected error occurred");
     },
   });
 }

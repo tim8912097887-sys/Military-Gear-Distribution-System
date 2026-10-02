@@ -2,6 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { listReservists } from "../api/query/query";
 import { reservistKeys } from "../constants/key";
 import { INCREMENT_LIMIT, INITIAL_LIMIT } from "../constants/limit";
+import { ApiError } from "../../../common/error/api-error";
 
 const useGetReservists = (search: string) => {
   const {
@@ -24,6 +25,15 @@ const useGetReservists = (search: string) => {
       });
 
       return response;
+    },
+    staleTime: 60_000,
+    retry: (failureCount, error) => {
+      // Stop retrying if it's a 400
+      if (error instanceof ApiError && error.status === 400) {
+        return false;
+      }
+
+      return failureCount < 3;
     },
     getNextPageParam: (lastPage) =>
       lastPage.pagination.hasMore ? lastPage.pagination.nextCursor : undefined,
