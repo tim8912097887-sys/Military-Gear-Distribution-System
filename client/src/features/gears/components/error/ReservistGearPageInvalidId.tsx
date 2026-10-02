@@ -35,7 +35,7 @@ const ReservistGearPageInvalidId = () => {
             focus:outline-none focus:ring-2 focus:ring-slate-500/50
           "
         >
-          Back to reservists
+          Back to reservist
         </Link>
       </div>
     </div>

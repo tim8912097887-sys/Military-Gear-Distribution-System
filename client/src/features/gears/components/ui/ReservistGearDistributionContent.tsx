@@ -1,68 +1,55 @@
-import { useGetGearForReservist } from "../../hooks/useGetGearForReservist";
-import { useIssueGear } from "../../hooks/useIssueGear";
-import { useReturnGear } from "../../hooks/useReturnGear";
-import ReservistGearPageError from "../error/ReservistGearPageError";
-import ReservistGearPageSkeleton from "../skeleton/ReservistGearPageSkeleton";
 import IssueGearPanel from "./issue/IssueGearPanel";
 import ReservistGearAllowance from "./allowance/ReservistGearAllowance";
 import ReservistGearHoldings from "./holding/ReservistGearHoldings";
 import ReservistGearPageHeader from "./header/ReservistGearPageHeader";
 import ReturnGearPanel from "./return/ReturnGearPanel";
+import type {
+  GearStatusResponse,
+  IssueGearInput,
+  ReturnGearInput,
+} from "../../types";
+
+type ReservistGearDistributionContentProps = {
+  gear: GearStatusResponse;
+  issueMutation: {
+    isPending: boolean;
+    mutateAsync: (input: IssueGearInput) => Promise<GearStatusResponse>;
+  };
+  returnMutation: {
+    isPending: boolean;
+    mutateAsync: (input: ReturnGearInput) => Promise<GearStatusResponse>;
+  };
+};
 
 const ReservistGearDistributionContent = ({
-  reservistId,
-}: {
-  reservistId: string;
-}) => {
-  const gearQuery = useGetGearForReservist(reservistId);
-
-  const issueMutation = useIssueGear(reservistId);
-  const returnMutation = useReturnGear(reservistId);
-
-  if (gearQuery.isPending) {
-    return <ReservistGearPageSkeleton />;
-  }
-
-  if (gearQuery.isError || !gearQuery.data) {
-    return (
-      <ReservistGearPageError
-        error={gearQuery.error}
-        onRetry={() => gearQuery.refetch()}
-      />
-    );
-  }
-
-  const gear = gearQuery.data;
-
+  gear,
+  issueMutation,
+  returnMutation,
+}: ReservistGearDistributionContentProps) => {
   return (
-    <main className="min-h-dvh bg-slate-950">
-      <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <ReservistGearPageHeader
-          reservistId={reservistId}
-          reservist={gear.reservist}
+    <>
+      <ReservistGearPageHeader reservist={gear.reservist} />
+
+      <div className="mt-6 space-y-6">
+        <ReservistGearHoldings holdings={gear.holdings} />
+
+        <ReservistGearAllowance allowance={gear.allowance} />
+
+        <IssueGearPanel
+          availability={gear.availability}
+          isMutating={issueMutation.isPending || returnMutation.isPending}
+          isCheckedIn={gear.reservist.checkedInAt !== null}
+          onSubmit={(input) => issueMutation.mutateAsync(input)}
         />
 
-        <div className="mt-6 space-y-6">
-          <ReservistGearHoldings holdings={gear.holdings} />
-
-          <ReservistGearAllowance allowance={gear.allowance} />
-
-          <IssueGearPanel
-            availability={gear.availability}
-            isSubmitting={issueMutation.isPending}
-            isCheckedIn={gear.reservist.checkedInAt !== null}
-            onSubmit={(input) => issueMutation.mutateAsync(input)}
-          />
-
-          <ReturnGearPanel
-            holdings={gear.holdings}
-            isSubmitting={returnMutation.isPending}
-            isCheckedIn={gear.reservist.checkedInAt !== null}
-            onSubmit={(input) => returnMutation.mutateAsync(input)}
-          />
-        </div>
+        <ReturnGearPanel
+          holdings={gear.holdings}
+          isMutating={returnMutation.isPending || issueMutation.isPending}
+          isCheckedIn={gear.reservist.checkedInAt !== null}
+          onSubmit={(input) => returnMutation.mutateAsync(input)}
+        />
       </div>
-    </main>
+    </>
   );
 };
 

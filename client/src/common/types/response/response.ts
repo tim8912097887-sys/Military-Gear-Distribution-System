@@ -14,7 +14,7 @@ export type ApiFailure = {
   data: null;
   error: {
     code: string;
-    message: string;
+    detail: string;
   };
   meta: ApiMeta;
 };

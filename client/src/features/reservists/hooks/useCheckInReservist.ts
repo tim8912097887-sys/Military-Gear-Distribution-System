@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { checkInReservist } from "../api/query/query";
 import { toast } from "react-toastify";
 import { reservistKeys } from "../constants/key";
+import { ApiError } from "../../../common/error/api-error";
 
 export function useCheckInReservist(reservistId: string) {
   const queryClient = useQueryClient();
@@ -22,7 +23,11 @@ export function useCheckInReservist(reservistId: string) {
     },
 
     onError: (error) => {
-      toast.error(error.message);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+        return;
+      }
+      toast.error("An unexpected error occurred");
     },
   });
 }

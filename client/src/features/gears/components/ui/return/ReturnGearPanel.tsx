@@ -8,14 +8,14 @@ import ReturnGearRow from "./ReturnGearRow";
 
 type ReturnGearPanelProps = {
   holdings: GearStatusResponse["holdings"];
-  isSubmitting: boolean;
+  isMutating: boolean;
   isCheckedIn: boolean;
   onSubmit: (input: ReturnGearInput) => Promise<GearStatusResponse>;
 };
 
 const ReturnGearPanel = ({
   holdings,
-  isSubmitting,
+  isMutating,
   isCheckedIn,
   onSubmit,
 }: ReturnGearPanelProps) => {
@@ -99,28 +99,30 @@ const ReturnGearPanel = ({
 
   const hasSelection = bulk.length > 0 || serialized.length > 0;
 
-  const handleSubmit = async () => {
-    if (!hasSelection || isSubmitting) {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!hasSelection || isMutating) {
       return;
     }
-
     try {
       await onSubmit({
         bulk,
         serialized,
       });
-
-      // Reset state after submission success
+    } catch {
+    } finally {
+      // Reset state after submission
       setBulkQuantities({});
       setConditions({});
       setSelectedSerialized(new Set());
-    } catch (error) {
-      console.error(error);
     }
   };
 
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900 shadow-xl shadow-black/20">
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-2xl border border-slate-800 bg-slate-900 shadow-xl shadow-black/20"
+    >
       <div className="border-b border-slate-800 px-5 py-4">
         <h2 className="text-base font-semibold text-slate-100">Return gear</h2>
 
@@ -169,9 +171,8 @@ const ReturnGearPanel = ({
         </p>
 
         <button
-          type="button"
-          disabled={!hasSelection || isSubmitting || !isCheckedIn}
-          onClick={handleSubmit}
+          type="submit"
+          disabled={!hasSelection || isMutating || !isCheckedIn}
           className="
             rounded-lg bg-amber-500 px-4 py-2
             text-sm font-medium text-slate-950
@@ -179,10 +180,10 @@ const ReturnGearPanel = ({
             disabled:cursor-not-allowed disabled:opacity-50
           "
         >
-          {isSubmitting ? "Returning..." : "Return selected"}
+          {isMutating ? "Returning..." : "Return selected"}
         </button>
       </div>
-    </section>
+    </form>
   );
 };
 
