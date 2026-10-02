@@ -40,9 +40,7 @@ describe("ReservistDetailPage", () => {
           formatDateTime(checkInReservist.checkedInAt as string),
         ),
       ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "Already checked in" }),
-      ).toBeInTheDocument();
+      expect(screen.getByText("View gear")).toBeInTheDocument();
       expect(
         screen.queryByRole("button", { name: "Check in reservist" }),
       ).not.toBeInTheDocument();
@@ -178,9 +176,7 @@ describe("ReservistDetailPage", () => {
       );
 
       // Assert
-      expect(
-        await screen.findByText(/Request failed with status 500/),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Database error/)).toBeInTheDocument();
       expect(screen.getAllByText("Not checked in")).toHaveLength(2);
     });
 
@@ -226,9 +222,7 @@ describe("ReservistDetailPage", () => {
       expect(
         screen.getByText(formatDateTime(checkedInDate)),
       ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "Already checked in" }),
-      ).toBeInTheDocument();
+      expect(screen.getByText("View gear")).toBeInTheDocument();
       expect(
         screen.queryByRole("button", { name: "Check in reservist" }),
       ).not.toBeInTheDocument();
