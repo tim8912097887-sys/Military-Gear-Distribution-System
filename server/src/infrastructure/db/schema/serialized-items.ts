@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { check, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { type SerializedStatus } from './enums.js';
 import { gearCategories } from './gear-categories.js';
 
@@ -23,7 +23,6 @@ export const serializedItems = pgTable(
       'serialized_item_status_check',
       sql`${t.status} IN ('AVAILABLE', 'ISSUED', 'MAINTENANCE', 'LOST')`,
     ),
-    index('idx_serialized_category_status_size').on(t.categoryId, t.status, t.size),
   ],
 );
 

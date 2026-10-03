@@ -1,4 +1,30 @@
 services:
+  cache:
+    image: redis:8.0-alpine
+    container_name: cache
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD:-password}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-password}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    ports:
+      - "5540:5540"
+    restart: always
+    depends_on:
+      cache:
+        condition: service_healthy
   server_migrations:
     build: ./server
     container_name: server_migrations
@@ -7,6 +33,8 @@ services:
     env_file:
       - ./server/.env
     depends_on:
+      cache:
+        condition: service_healthy
       db:
         condition: service_healthy
   server:
@@ -18,6 +46,8 @@ services:
       - ./server/.env
     depends_on:
       db:
+        condition: service_healthy
+      cache:
         condition: service_healthy
       server_migrations:
         condition: service_completed_successfully
@@ -63,3 +93,4 @@ services:
 
 volumes:
   db_data:
+  redis_data:
