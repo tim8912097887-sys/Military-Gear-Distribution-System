@@ -66,7 +66,11 @@ export function toExpectedView(row: ReservistRow): {
     nationalId: row.nationalId,
     name: row.name,
     militaryRank: row.militaryRank as string,
-    checkedInAt: row.checkedInAt ? row.checkedInAt.toISOString() : null,
-    createdAt: row.createdAt.toISOString(),
+    checkedInAt: row.checkedInAt
+      ? typeof row.checkedInAt === 'string'
+        ? row.checkedInAt
+        : row.checkedInAt.toISOString()
+      : null,
+    createdAt: typeof row.createdAt === 'string' ? row.createdAt : row.createdAt.toISOString(),
   };
 }

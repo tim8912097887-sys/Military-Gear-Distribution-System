@@ -24,6 +24,7 @@ import {
   unknownReservistId,
 } from '../../utils/reservists/factory.js';
 import { INVALID_RESERVIST_IDS } from '../../utils/reservists/invalid-inputs.js';
+import { getReservistCache } from '../../utils/reservists/cache.js';
 
 describe('GET /api/v1/reservists/:reservistId', () => {
   beforeEach(async () => {
@@ -50,6 +51,22 @@ describe('GET /api/v1/reservists/:reservistId', () => {
         checkedInAt: null,
         createdAt: DEFAULT_CREATED_AT.toISOString(),
       });
+    });
+
+    it('when request reservist first time then caches the result for future requests', async () => {
+      // Arrange
+      const reservist = await seedReservist(buildReservist());
+
+      // Act
+      const first = await api().get(reservistUrl(reservist.id));
+      const reservistCache = await getReservistCache(reservist.id);
+
+      // Assert
+      expect(first.status).toBe(HTTP_STATUS.OK);
+      expect(first.body.state).toBe(STATE.SUCCESS);
+      expect(first.body.data).toEqual(toExpectedView(reservist));
+      expect(reservistCache).not.toBeNull();
+      expect(first.body.data).toEqual(JSON.parse(reservistCache as string));
     });
 
     it('when the reservist has checked in then checkedInAt is returned as an ISO string', async () => {
