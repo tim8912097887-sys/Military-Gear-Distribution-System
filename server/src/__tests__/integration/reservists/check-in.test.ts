@@ -28,21 +28,24 @@ import {
   DEFAULT_CHECKED_IN_AT,
   toExpectedView,
   unknownReservistId,
+  type ReservistRow,
 } from '../../utils/reservists/factory.js';
 import { INVALID_RESERVIST_IDS } from '../../utils/reservists/invalid-inputs.js';
+import { getReservistCache } from '../../utils/reservists/cache.js';
 
 describe('POST /api/v1/reservists/:reservistId/check-in', () => {
   beforeEach(async () => {
     await truncateReservists();
   });
   describe('success', () => {
-    it('when the reservist has not checked in then responds 200 with checkedInAt set to now', async () => {
+    it('when the reservist has not checked in then responds 200 with checkedInAt set to now in db and cache', async () => {
       // Arrange
       const reservist = await seedReservist(buildReservist({ name: 'Alice' }));
       const before = Date.now();
 
       // Act
       const res = await api().post(checkInUrl(reservist.id));
+      const cacheReservist = await getReservistCache(reservist.id);
       const after = Date.now();
 
       // Assert
@@ -52,20 +55,29 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
         checkedInAt: expect.any(String),
       });
       expectIsoTimestampBetween(res.body.data.checkedInAt, before, after);
+      expect(cacheReservist).not.toBeNull();
+      expect(res.body.data).toEqual(JSON.parse(cacheReservist as string));
+      expectIsoTimestampBetween(JSON.parse(cacheReservist as string).checkedInAt, before, after);
     });
 
-    it('when the check-in succeeds then persists checkedInAt in the database', async () => {
+    it('when the check-in succeeds then persists checkedInAt in the database and cache', async () => {
       // Arrange
       const reservist = await seedReservist(buildReservist());
 
       // Act
       const res = await api().post(checkInUrl(reservist.id));
       const row = await findReservistRow(reservist.id);
+      const cacheReservist = await getReservistCache(reservist.id);
 
       // Assert
       expect(res.status).toBe(HTTP_STATUS.OK);
       expect(row?.checkedInAt).toBeInstanceOf(Date);
       expect(row?.checkedInAt?.toISOString()).toBe(res.body.data.checkedInAt);
+      expect(cacheReservist).not.toBeNull();
+      expect(res.body.data).toEqual(JSON.parse(cacheReservist as string));
+      expect(row?.checkedInAt?.toISOString()).toBe(
+        JSON.parse(cacheReservist as string).checkedInAt,
+      );
     });
 
     it('when the check-in succeeds then changes no other field of the reservist', async () => {
@@ -75,9 +87,14 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
       // Act
       await api().post(checkInUrl(reservist.id));
       const row = await findReservistRow(reservist.id);
+      const cacheReservist = await getReservistCache(reservist.id);
 
       // Assert
       expect(row).toEqual({ ...reservist, checkedInAt: expect.any(Date) });
+      expect(cacheReservist).not.toBeNull();
+      expect(JSON.parse(cacheReservist as string)).toEqual({
+        ...toExpectedView(row as ReservistRow),
+      });
     });
 
     it('when the check-in succeeds then other reservists are left untouched', async () => {
@@ -87,11 +104,19 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
       const alreadyIn = await seedReservist(buildCheckedInReservist({ name: 'Already In' }));
 
       // Act
+      await api().get(reservistUrl(bystander.id));
+      await api().get(reservistUrl(alreadyIn.id));
+      const bystanderCache = await getReservistCache(bystander.id);
+      const alreadyInCache = await getReservistCache(alreadyIn.id);
       await api().post(checkInUrl(target.id));
 
       // Assert
       expect(await findReservistRow(bystander.id)).toEqual(bystander);
       expect(await findReservistRow(alreadyIn.id)).toEqual(alreadyIn);
+      expect(bystanderCache).not.toBeNull();
+      expect(alreadyInCache).not.toBeNull();
+      expect(JSON.parse(bystanderCache as string)).toEqual(toExpectedView(bystander));
+      expect(JSON.parse(alreadyInCache as string)).toEqual(toExpectedView(alreadyIn));
     });
 
     it('when the request carries a body then ignores it and uses the server time', async () => {
@@ -201,12 +226,19 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
       const reservist = await seedReservist(buildCheckedInReservist());
 
       // Act
+      // This is needed to get the cached version of the reservist
+      await api().get(reservistUrl(reservist.id));
       const res = await api().post(checkInUrl(reservist.id));
       const row = await findReservistRow(reservist.id);
+      const cacheReservist = await getReservistCache(reservist.id);
 
       // Assert
       expectErrorResponse(res, HTTP_STATUS.CONFLICT);
       expect(row?.checkedInAt?.toISOString()).toBe(DEFAULT_CHECKED_IN_AT.toISOString());
+      expect(cacheReservist).not.toBeNull();
+      expect(JSON.parse(cacheReservist as string).checkedInAt).toBe(
+        DEFAULT_CHECKED_IN_AT.toISOString(),
+      );
     });
 
     it('when the same reservist checks in twice then the first succeeds, the second responds 409 and the first timestamp is kept', async () => {
@@ -217,11 +249,14 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
       const first = await api().post(checkInUrl(reservist.id));
       const second = await api().post(checkInUrl(reservist.id));
       const row = await findReservistRow(reservist.id);
+      const cacheReservist = await getReservistCache(reservist.id);
 
       // Assert
       expect(first.status).toBe(HTTP_STATUS.OK);
       expectErrorResponse(second, HTTP_STATUS.CONFLICT);
       expect(row?.checkedInAt?.toISOString()).toBe(first.body.data.checkedInAt);
+      expect(cacheReservist).not.toBeNull();
+      expect(JSON.parse(cacheReservist as string).checkedInAt).toBe(first.body.data.checkedInAt);
     });
 
     it('when several check-ins race for the same reservist then exactly one succeeds and the rest respond 409', async () => {
@@ -234,6 +269,7 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
         Array.from({ length: attempts }, () => api().post(checkInUrl(reservist.id))),
       );
       const row = await findReservistRow(reservist.id);
+      const cacheReservist = await getReservistCache(reservist.id);
 
       // Assert
       const statuses = responses.map((r) => r.status).sort();
@@ -243,6 +279,8 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
       ]);
       const winner = responses.find((r) => r.status === HTTP_STATUS.OK);
       expect(row?.checkedInAt?.toISOString()).toBe(winner?.body.data.checkedInAt);
+      expect(cacheReservist).not.toBeNull();
+      expect(JSON.parse(cacheReservist as string).checkedInAt).toBe(winner?.body.data.checkedInAt);
     });
 
     it('when different reservists check in concurrently then all of them succeed', async () => {
@@ -255,7 +293,11 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
       // Assert
       expect(responses.map((r) => r.status)).toEqual(reservists.map(() => HTTP_STATUS.OK));
       for (const reservist of reservists) {
-        expect((await findReservistRow(reservist.id))?.checkedInAt).toBeInstanceOf(Date);
+        const row = await findReservistRow(reservist.id);
+        const cacheReservist = await getReservistCache(reservist.id);
+        expect(JSON.parse(cacheReservist as string)).toEqual({
+          ...toExpectedView(row as ReservistRow),
+        });
       }
     });
   });
