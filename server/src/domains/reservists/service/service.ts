@@ -1,11 +1,16 @@
 import type { Reservist } from '../../../infrastructure/db/schema/reservists.js';
+import { getReservistCacheKey, RESERVIST_CACHE_TTL_SECONDS } from '../constants/cach.js';
 import { CheckInConflictError } from '../errors/check-in-conflict.js';
 import { ReservistNotFoundError } from '../errors/reservist-not-found.js';
 import type { ReservistRepository } from '../repository/repository.js';
 import type { ListReservistsServiceInput, ListReservistsResponse, ReservistView } from './dto.js';
+import type { CacheClientType } from './types.js';
 
 export class ReservistService {
-  constructor(private readonly reservistRepository: ReservistRepository) {}
+  constructor(
+    private readonly reservistRepository: ReservistRepository,
+    private readonly reservistCache: CacheClientType,
+  ) {}
 
   async list(query: ListReservistsServiceInput): Promise<ListReservistsResponse> {
     const {
@@ -19,10 +24,24 @@ export class ReservistService {
   }
 
   async getById(reservistId: string): Promise<ReservistView> {
+    const cached = await this.reservistCache.get(getReservistCacheKey(reservistId));
+    if (cached) {
+      return JSON.parse(cached) as ReservistView;
+    }
+
     const reservist = await this.reservistRepository.findById(reservistId);
     if (!reservist) {
       throw new ReservistNotFoundError(reservistId);
     }
+    // Cache aside the retrieved reservist for future requests
+    await this.reservistCache.set(
+      getReservistCacheKey(reservistId),
+      JSON.stringify(this.toView(reservist)),
+      {
+        expiration: { type: 'EX', value: RESERVIST_CACHE_TTL_SECONDS },
+      },
+    );
+
     return this.toView(reservist);
   }
 
@@ -38,6 +57,15 @@ export class ReservistService {
 
       throw new CheckInConflictError(reservistId);
     }
+
+    // Cache aside the updated reservist for future requests
+    await this.reservistCache.set(
+      getReservistCacheKey(reservistId),
+      JSON.stringify(this.toView(reservist)),
+      {
+        expiration: { type: 'EX', value: RESERVIST_CACHE_TTL_SECONDS },
+      },
+    );
 
     return this.toView(reservist);
   }

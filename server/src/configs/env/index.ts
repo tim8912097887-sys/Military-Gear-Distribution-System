@@ -28,6 +28,9 @@ const EnvSchema = z.object({
       /^postgres(?:ql)?:\/\/(?:[^:@/\s]+(?::[^@/\s]*)?@)?[^:/\s?#]+(?::\d{1,5})?\/[^\s?#]+(?:\?[^\s#]*)?$/,
     ),
   CORS_ORIGIN: z.url('CORS_ORIGIN must be a valid URL'),
+  CACHE_URL: z.string({
+    error: 'CACHE_URL must be a string',
+  }),
 });
 
 const result = EnvSchema.safeParse(process.env);
