@@ -1,17 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { api } from '../../utils/reservists/app.js';
+import { expectNoInternalDetailsLeaked } from '../../utils/reservists/assertions.js';
 import {
-  expectErrorResponse,
-  expectNoInternalDetailsLeaked,
-  //   idsOf,
-  //   namesOf,
-} from '../../utils/reservists/assertions.js';
-import {
-  HTTP_STATUS,
+  DEFAULT_CHECKED_IN_AT,
   LIST_LIMITS,
+  RESERVIST_BROKEN_TABLE_NAME,
+  RESERVIST_TABLE_NAME,
   RESERVISTS_URL,
-  STATE,
 } from '../../utils/reservists/constants.js';
 import {
   seedReservist,
@@ -19,8 +15,7 @@ import {
   //   seedReservist,
   seedReservists,
   truncateReservists,
-  withBrokenReservistsTable,
-} from '../../utils/reservists/seed.js';
+} from '../../utils/reservists/query.js';
 import {
   buildCheckedInReservist,
   buildCheckedInReservists,
@@ -28,12 +23,14 @@ import {
   //   buildCheckedInReservist,
   //   buildReservist,
   buildReservists,
-  DEFAULT_CHECKED_IN_AT,
   toExpectedView,
   //   DEFAULT_CHECKED_IN_AT,
   //   toExpectedView,
 } from '../../utils/reservists/factory.js';
 import { INVALID_LIST_QUERIES } from '../../utils/reservists/invalid-inputs.js';
+import { HTTP_STATUS, STATE } from '../../utils/common/constants.js';
+import { withBrokenTable } from '../../utils/common/seed.js';
+import { expectErrorResponse } from '../../utils/common/assertions.js';
 
 describe('GET /api/v1/reservists', () => {
   beforeEach(async () => {
@@ -204,7 +201,10 @@ describe('GET /api/v1/reservists', () => {
       await seedReservists(buildReservists(2));
 
       // Act
-      const res = await withBrokenReservistsTable(() => api().get(RESERVISTS_URL));
+      const res = await withBrokenTable(() => api().get(RESERVISTS_URL), {
+        TABLE_NAME: RESERVIST_TABLE_NAME,
+        BROKEN_TABLE_NAME: RESERVIST_BROKEN_TABLE_NAME,
+      });
 
       // Assert
       expectErrorResponse(res, HTTP_STATUS.INTERNAL_SERVER_ERROR);
@@ -216,8 +216,13 @@ describe('GET /api/v1/reservists', () => {
       await seedReservists(buildReservists(2));
 
       // Act
-      const res = await withBrokenReservistsTable(() =>
-        api().get(RESERVISTS_URL).query({ q: 'alice', checkedIn: 'true', limit: 5, offset: 1 }),
+      const res = await withBrokenTable(
+        () =>
+          api().get(RESERVISTS_URL).query({ q: 'alice', checkedIn: 'true', limit: 5, offset: 1 }),
+        {
+          TABLE_NAME: RESERVIST_TABLE_NAME,
+          BROKEN_TABLE_NAME: RESERVIST_BROKEN_TABLE_NAME,
+        },
       );
 
       // Assert
@@ -227,7 +232,10 @@ describe('GET /api/v1/reservists', () => {
     it('when the database recovers after a failure then the next request succeeds', async () => {
       // Arrange
       await seedReservists(buildReservists(2));
-      const failed = await withBrokenReservistsTable(() => api().get(RESERVISTS_URL));
+      const failed = await withBrokenTable(() => api().get(RESERVISTS_URL), {
+        TABLE_NAME: RESERVIST_TABLE_NAME,
+        BROKEN_TABLE_NAME: RESERVIST_BROKEN_TABLE_NAME,
+      });
 
       // Act
       const recovered = await api().get(RESERVISTS_URL);

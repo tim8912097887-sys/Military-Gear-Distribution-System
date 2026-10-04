@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, vitest } from 'vitest';
-import { cacheClientConnect } from './utils/reservists/cache.js';
+import { cacheClientClose, cacheClientConnect } from './utils/common/cache.js';
+import { afterAll } from 'vitest';
 
 beforeEach(() => {
   vitest.resetAllMocks();
@@ -9,4 +10,8 @@ beforeEach(() => {
 
 beforeAll(async () => {
   await cacheClientConnect();
+});
+
+afterAll(async () => {
+  await cacheClientClose();
 });

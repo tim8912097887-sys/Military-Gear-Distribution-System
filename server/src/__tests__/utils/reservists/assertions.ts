@@ -1,11 +1,6 @@
 import type { Response } from 'supertest';
 import { expect } from 'vitest';
 
-export function expectErrorResponse(res: Response, status: number): void {
-  expect(res.status).toBe(status);
-  expect(res.body.data).toBe(null);
-}
-
 /** A 500 must not leak SQL / table details to the client. */
 export function expectNoInternalDetailsLeaked(res: Response): void {
   const serialized = JSON.stringify(res.body).toLowerCase();

@@ -2,16 +2,17 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { api } from '../../utils/reservists/app.js';
 import {
-  expectErrorResponse,
   expectIsoTimestampBetween,
   expectNoInternalDetailsLeaked,
   namesOf,
 } from '../../utils/reservists/assertions.js';
 import {
   checkInUrl,
-  HTTP_STATUS,
   reservistUrl,
   RESERVISTS_URL,
+  RESERVIST_BROKEN_TABLE_NAME,
+  RESERVIST_TABLE_NAME,
+  DEFAULT_CHECKED_IN_AT,
 } from '../../utils/reservists/constants.js';
 import {
   countReservists,
@@ -19,23 +20,25 @@ import {
   seedReservist,
   seedReservists,
   truncateReservists,
-  withBrokenReservistsTable,
-} from '../../utils/reservists/seed.js';
+} from '../../utils/reservists/query.js';
 import {
   buildCheckedInReservist,
   buildReservist,
   buildReservists,
-  DEFAULT_CHECKED_IN_AT,
   toExpectedView,
   unknownReservistId,
   type ReservistRow,
 } from '../../utils/reservists/factory.js';
-import { INVALID_RESERVIST_IDS } from '../../utils/reservists/invalid-inputs.js';
-import { getReservistCache } from '../../utils/reservists/cache.js';
+import { cacheClientReset, getReservistCache } from '../../utils/common/cache.js';
+import { withBrokenTable } from '../../utils/common/seed.js';
+import { HTTP_STATUS } from '../../utils/common/constants.js';
+import { INVALID_RESERVIST_IDS } from '../../utils/common/invalid-inputs.js';
+import { expectErrorResponse } from '../../utils/common/assertions.js';
 
 describe('POST /api/v1/reservists/:reservistId/check-in', () => {
   beforeEach(async () => {
     await truncateReservists();
+    await cacheClientReset();
   });
   describe('success', () => {
     it('when the reservist has not checked in then responds 200 with checkedInAt set to now in db and cache', async () => {
@@ -308,7 +311,10 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
       const reservist = await seedReservist(buildReservist());
 
       // Act
-      const res = await withBrokenReservistsTable(() => api().post(checkInUrl(reservist.id)));
+      const res = await withBrokenTable(() => api().post(checkInUrl(reservist.id)), {
+        TABLE_NAME: RESERVIST_TABLE_NAME,
+        BROKEN_TABLE_NAME: RESERVIST_BROKEN_TABLE_NAME,
+      });
 
       // Assert
       expectErrorResponse(res, HTTP_STATUS.INTERNAL_SERVER_ERROR);
@@ -320,7 +326,10 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
       const reservist = await seedReservist(buildReservist());
 
       // Act
-      await withBrokenReservistsTable(() => api().post(checkInUrl(reservist.id)));
+      await withBrokenTable(() => api().post(checkInUrl(reservist.id)), {
+        TABLE_NAME: RESERVIST_TABLE_NAME,
+        BROKEN_TABLE_NAME: RESERVIST_BROKEN_TABLE_NAME,
+      });
       const row = await findReservistRow(reservist.id);
 
       // Assert
@@ -330,7 +339,10 @@ describe('POST /api/v1/reservists/:reservistId/check-in', () => {
     it('when the database recovers after a failure then the check-in succeeds', async () => {
       // Arrange
       const reservist = await seedReservist(buildReservist());
-      const failed = await withBrokenReservistsTable(() => api().post(checkInUrl(reservist.id)));
+      const failed = await withBrokenTable(() => api().post(checkInUrl(reservist.id)), {
+        TABLE_NAME: RESERVIST_TABLE_NAME,
+        BROKEN_TABLE_NAME: RESERVIST_BROKEN_TABLE_NAME,
+      });
 
       // Act
       const recovered = await api().post(checkInUrl(reservist.id));
