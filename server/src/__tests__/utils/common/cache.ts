@@ -1,7 +1,7 @@
 import { createClient } from 'redis';
 import { getReservistCacheKey } from '../../../domains/reservists/constants/cach.js';
 
-const cacheClient = createClient({
+export const cacheClient = createClient({
   url: process.env.CACHE_URL,
   socket: {
     reconnectStrategy: (retries: number) => {
@@ -10,6 +10,14 @@ const cacheClient = createClient({
     },
   },
 });
+
+export async function cacheClientClose() {
+  await cacheClient.quit();
+}
+
+export async function cacheClientReset() {
+  await cacheClient.flushAll();
+}
 
 export async function cacheClientConnect() {
   try {

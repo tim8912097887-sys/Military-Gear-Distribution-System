@@ -4,14 +4,6 @@ export const reservistUrl = (id: string): string => `${RESERVISTS_URL}/${encodeU
 
 export const checkInUrl = (id: string): string => `${reservistUrl(id)}/check-in`;
 
-export const HTTP_STATUS = {
-  OK: 200,
-  BAD_REQUEST: 400,
-  NOT_FOUND: 404,
-  CONFLICT: 409,
-  INTERNAL_SERVER_ERROR: 500,
-} as const;
-
 export const LIST_LIMITS = {
   defaultLimit: 5,
   defaultCursor: null,
@@ -19,7 +11,10 @@ export const LIST_LIMITS = {
   maxLimit: 20,
 } as const;
 
-export const STATE = {
-  SUCCESS: 'success',
-  ERROR: 'error',
-};
+export const RESERVIST_TABLE_NAME = 'reservists';
+export const RESERVIST_BROKEN_TABLE_NAME = `${RESERVIST_TABLE_NAME}_broken`;
+
+export const RANKS = ['Private', 'Corporal', 'Sergeant', 'Lieutenant', 'Captain'] as const;
+
+export const DEFAULT_CREATED_AT = new Date('2024-01-15T08:30:00.000Z');
+export const DEFAULT_CHECKED_IN_AT = new Date('2024-02-01T10:00:00.000Z');

@@ -1,13 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type { reservists } from '../../../infrastructure/db/schema/reservists.js';
+import { DEFAULT_CHECKED_IN_AT, DEFAULT_CREATED_AT, RANKS } from './constants.js';
 
 export type ReservistRow = typeof reservists.$inferSelect;
 export type ReservistInsert = typeof reservists.$inferInsert;
-
-const RANKS = ['Private', 'Corporal', 'Sergeant', 'Lieutenant', 'Captain'] as const;
-
-export const DEFAULT_CREATED_AT = new Date('2024-01-15T08:30:00.000Z');
-export const DEFAULT_CHECKED_IN_AT = new Date('2024-02-01T10:00:00.000Z');
 
 let sequence = 0;
 
