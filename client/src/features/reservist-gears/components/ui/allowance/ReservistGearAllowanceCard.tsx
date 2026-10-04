@@ -6,7 +6,10 @@ const ReservistGearAllowanceCard = ({
   allowance: GearAllowanceView;
 }) => {
   return (
-    <div className="rounded-xl border border-slate-700/70 bg-slate-800/60 p-4">
+    <div
+      data-testid="gear-allowance-card"
+      className="rounded-xl border border-slate-700/70 bg-slate-800/60 p-4"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-medium text-slate-100">

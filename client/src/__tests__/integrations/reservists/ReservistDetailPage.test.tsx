@@ -1,21 +1,18 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { server } from "../../utils/reservists/server";
+import { server } from "../../utils/common/server";
 import { http, HttpResponse } from "msw";
-import {
-  errorResponse,
-  successResponse,
-} from "../../utils/reservists/response";
+import { errorResponse, successResponse } from "../../utils/common/response";
 import {
   buildCheckedInReservist,
   buildReservist,
 } from "../../utils/reservists/factory";
-import { customRender } from "../../utils/reservists/render";
+import { customRender } from "../../utils/common/render";
 import ReservistDetailPage from "../../../features/reservists/pages/ReservistDetailPage";
 import { formatDateTime } from "../../../features/reservists/utils/format-date-time";
 import { ToastContainer } from "react-toastify";
-import { basedUrl } from "../../utils/reservists/http";
+import { reservistBasedUrl } from "../../utils/reservists/http";
 
 describe("ReservistDetailPage", () => {
   describe("Success Load", () => {
@@ -23,7 +20,7 @@ describe("ReservistDetailPage", () => {
       // Arrange
       const checkInReservist = buildCheckedInReservist();
       server.use(
-        http.get(`${basedUrl}/:reservistId`, () => {
+        http.get(`${reservistBasedUrl}/:reservistId`, () => {
           return HttpResponse.json(successResponse(checkInReservist));
         }),
       );
@@ -69,7 +66,7 @@ describe("ReservistDetailPage", () => {
     it("when the reservist is not found then displays 'Reservist not found'", async () => {
       // Arrange
       server.use(
-        http.get(`${basedUrl}/:reservistId`, () => {
+        http.get(`${reservistBasedUrl}/:reservistId`, () => {
           return HttpResponse.json(
             errorResponse({
               code: "RESERVIST_NOT_FOUND",
@@ -100,7 +97,7 @@ describe("ReservistDetailPage", () => {
     it("when the reservist load fails then displays initial error message", async () => {
       // Arrange
       server.use(
-        http.get(`${basedUrl}/:reservistId`, () => {
+        http.get(`${reservistBasedUrl}/:reservistId`, () => {
           return HttpResponse.json(
             errorResponse({ code: "DB_ERROR", detail: "Database error" }),
             { status: 500 },
@@ -115,9 +112,6 @@ describe("ReservistDetailPage", () => {
       });
 
       // Assert
-      // expect(
-      //   await screen.findByText("Unable to load reservist"),
-      // ).toBeInTheDocument();
       expect(
         await screen.findByRole("button", { name: "Try again" }),
       ).toBeInTheDocument();
@@ -152,7 +146,7 @@ describe("ReservistDetailPage", () => {
     it("when reservist check in fails then displays check in error toast", async () => {
       // Arrange
       server.use(
-        http.post(`${basedUrl}/:reservistId/check-in`, () => {
+        http.post(`${reservistBasedUrl}/:reservistId/check-in`, () => {
           return HttpResponse.json(
             errorResponse({ code: "DB_ERROR", detail: "Database error" }),
             { status: 500 },
@@ -185,12 +179,12 @@ describe("ReservistDetailPage", () => {
       const reservist = buildReservist();
       const checkedInDate = new Date().toISOString();
       server.use(
-        http.get(`${basedUrl}/:reservistId`, () => {
+        http.get(`${reservistBasedUrl}/:reservistId`, () => {
           return HttpResponse.json(successResponse(reservist));
         }),
       );
       server.use(
-        http.post(`${basedUrl}/:reservistId/check-in`, () => {
+        http.post(`${reservistBasedUrl}/:reservistId/check-in`, () => {
           return HttpResponse.json(
             successResponse({
               ...reservist,

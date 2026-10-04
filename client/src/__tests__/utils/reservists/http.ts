@@ -1,24 +1,24 @@
 import { http, HttpResponse } from "msw";
-import { successResponse } from "./response";
+import { successResponse } from "../common/response";
 import {
   buildCheckedInReservist,
   buildReservist,
   paginationResponse,
 } from "./factory";
 
-export const basedUrl =
+export const reservistBasedUrl =
   import.meta.env.VITE_API_BASE_URL + "/api/v1/reservists";
 
-export const handlers = [
-  http.get(basedUrl, () => {
+export const reservistHandlers = [
+  http.get(reservistBasedUrl, () => {
     return HttpResponse.json(successResponse(paginationResponse([], {})));
   }),
 
-  http.get(`${basedUrl}/:reservistId`, () => {
+  http.get(`${reservistBasedUrl}/:reservistId`, () => {
     return HttpResponse.json(successResponse(buildReservist()));
   }),
 
-  http.post(`${basedUrl}/:reservistId/check-in`, () => {
+  http.post(`${reservistBasedUrl}/:reservistId/check-in`, () => {
     return HttpResponse.json(successResponse(buildCheckedInReservist()));
   }),
 ];

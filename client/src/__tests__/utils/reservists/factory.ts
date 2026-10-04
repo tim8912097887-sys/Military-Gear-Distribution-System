@@ -2,6 +2,7 @@ import type {
   ListReservistsResponse,
   ReservistView,
 } from "../../../features/reservists/types";
+import { DEFAULT_CHECKED_IN_AT, DEFAULT_CREATED_AT } from "./constants";
 
 const RANKS = [
   "Private",
@@ -10,9 +11,6 @@ const RANKS = [
   "Lieutenant",
   "Captain",
 ] as const;
-
-export const DEFAULT_CREATED_AT = "2024-01-15T08:30:00.000Z";
-export const DEFAULT_CHECKED_IN_AT = "2024-02-01T10:00:00.000Z";
 
 let sequence = 0;
 

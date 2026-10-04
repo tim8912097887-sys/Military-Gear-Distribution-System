@@ -20,7 +20,7 @@ const IssueGearRow = ({
   onSerializedToggle,
 }: IssueGearRowProps) => {
   return (
-    <div className="px-5 py-5">
+    <div data-testid="issue-gear-row" className="px-5 py-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-sm font-semibold text-slate-100">
