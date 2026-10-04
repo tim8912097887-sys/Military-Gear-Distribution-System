@@ -1,19 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { customRender } from "../../utils/reservists/render";
+import { customRender } from "../../utils/common/render";
 import ReservistListPage from "../../../features/reservists/pages/ReservistListPage";
 import { fireEvent, screen } from "@testing-library/react";
-import { server } from "../../utils/reservists/server";
+import { server } from "../../utils/common/server";
 import { http, HttpResponse } from "msw";
-import {
-  errorResponse,
-  successResponse,
-} from "../../utils/reservists/response";
+import { errorResponse, successResponse } from "../../utils/common/response";
 import {
   buildCheckedInReservists,
   buildReservists,
   paginationResponse,
 } from "../../utils/reservists/factory";
 import { INITIAL_LIMIT } from "../../../features/reservists/constants/limit";
+import { reservistBasedUrl } from "../../utils/reservists/http";
 
 describe("ReservistListPage", () => {
   describe("Initial State", () => {
@@ -50,7 +48,7 @@ describe("ReservistListPage", () => {
       // Arrange
       const reservists = buildReservists(INITIAL_LIMIT);
       server.use(
-        http.get("http://localhost:3000/api/v1/reservists", () => {
+        http.get(reservistBasedUrl, () => {
           return HttpResponse.json(
             successResponse(
               paginationResponse(reservists, {
@@ -90,7 +88,7 @@ describe("ReservistListPage", () => {
       const checkedIn = buildCheckedInReservists(2);
 
       server.use(
-        http.get("http://localhost:3000/api/v1/reservists", () => {
+        http.get(reservistBasedUrl, () => {
           return HttpResponse.json(
             successResponse(
               paginationResponse([...notCheckedIn, ...checkedIn], {
@@ -118,7 +116,7 @@ describe("ReservistListPage", () => {
     it("when initial load fails then displays initial error message", async () => {
       // Arrange
       server.use(
-        http.get("http://localhost:3000/api/v1/reservists", () => {
+        http.get(reservistBasedUrl, () => {
           return HttpResponse.json(
             errorResponse({ code: "DB_ERROR", detail: "Database error" }),
             { status: 500 },
@@ -152,7 +150,7 @@ describe("ReservistListPage", () => {
       // Arrange
       const reservists = buildReservists(INITIAL_LIMIT);
       server.use(
-        http.get("http://localhost:3000/api/v1/reservists", ({ request }) => {
+        http.get(reservistBasedUrl, ({ request }) => {
           const cursor = new URL(request.url).searchParams.get("cursor");
 
           if (cursor === "cursor") {
@@ -202,7 +200,7 @@ describe("ReservistListPage", () => {
       const firstPage = buildReservists(INITIAL_LIMIT);
       const lastPage = buildReservists(INITIAL_LIMIT);
       server.use(
-        http.get("http://localhost:3000/api/v1/reservists", ({ request }) => {
+        http.get(reservistBasedUrl, ({ request }) => {
           const cursor = new URL(request.url).searchParams.get("cursor");
           const reservists = cursor === "cursor" ? lastPage : firstPage;
 
@@ -249,7 +247,7 @@ describe("ReservistListPage", () => {
       const firstPage = buildReservists(INITIAL_LIMIT);
       const secondPage = buildReservists(INITIAL_LIMIT);
       server.use(
-        http.get("http://localhost:3000/api/v1/reservists", ({ request }) => {
+        http.get(reservistBasedUrl, ({ request }) => {
           const cursor = new URL(request.url).searchParams.get("cursor");
           const isInitialPage = cursor !== "cursor";
 

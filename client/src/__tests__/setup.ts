@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { server } from "./utils/reservists/server";
+import { server } from "./utils/common/server";
 
 beforeAll(() => server.listen());
 

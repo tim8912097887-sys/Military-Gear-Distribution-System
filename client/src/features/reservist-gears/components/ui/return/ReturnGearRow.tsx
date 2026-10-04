@@ -27,6 +27,7 @@ const ReturnGearRow = ({
 
   return (
     <div
+      data-testid="return-gear-row"
       className="
         flex flex-col gap-4 rounded-lg border border-slate-800
         bg-slate-950/50 px-4 py-4
