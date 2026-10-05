@@ -57,6 +57,8 @@ The system helps personnel check in reservists, manage gear inventory, issue equ
 **Backend**
 
 * Node.js
+* Express.js
+* Drizzle Orm
 * TypeScript
 * REST API
 * PostgreSQL
@@ -148,8 +150,12 @@ npm install
 Configure the required environment variables:
 
 ```env
-DATABASE_URL=postgresql://...
-VITE_API_BASE_URL=http://localhost:<server-port>
+NODE_ENV=development
+PORT=3000
+LOG_LEVEL=debug
+CACHE_URL=redis://:password@cache:6379/0
+DATABASE_URL=postgresql://postgres:password@db:5432/military_gear_distribution
+CORS_ORIGIN=http://localhost:5173
 ```
 
 ### Run
@@ -158,7 +164,7 @@ Start the backend:
 
 ```bash
 cd server
-npm run dev
+docker compose up
 ```
 
 Start the frontend in another terminal:
