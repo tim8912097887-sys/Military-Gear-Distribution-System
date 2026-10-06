@@ -18,7 +18,7 @@ export function useReturnGear(reservistId: string) {
         updatedGearStatus,
       );
       queryClient.invalidateQueries({
-        queryKey: reservistGearKeys.history(reservistId),
+        queryKey: reservistGearKeys.history(reservistId, 0),
       });
       toast.success("Reservist returned successfully");
     },

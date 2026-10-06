@@ -1,4 +1,4 @@
-import type { GearStatusResponse } from "../../../types";
+import type { GearStatusResponse } from "../../../../types";
 import ReservistGearAllowanceCard from "./ReservistGearAllowanceCard";
 
 const ReservistGearAllowance = ({

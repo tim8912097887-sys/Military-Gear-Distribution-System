@@ -1,4 +1,4 @@
-import type { GearAvailabilityResponse } from "../../../types";
+import type { GearAvailabilityResponse } from "../../../../types";
 
 type IssueGearRowProps = {
   item: GearAvailabilityResponse;

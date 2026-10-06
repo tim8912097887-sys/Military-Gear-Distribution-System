@@ -5,6 +5,7 @@ import ReservistDetailPage from "../features/reservists/pages/ReservistDetailPag
 import NotFoundPage from "../common/components/pages/NotFoundPage";
 import ReservistGearDistributionPage from "../features/reservist-gears/pages/ReservistGearDistributionPage";
 import LandingPage from "../common/components/pages/LandingPage";
+import ReservistGearHistoryPage from "../features/reservist-gears/pages/ReservistGearHistoryPage";
 
 export const router = createBrowserRouter([
   {
@@ -26,6 +27,10 @@ export const router = createBrowserRouter([
       {
         path: "/reservists/:id/gears",
         element: <ReservistGearDistributionPage />,
+      },
+      {
+        path: "/reservists/:id/gears/history",
+        element: <ReservistGearHistoryPage />,
       },
     ],
   },

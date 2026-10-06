@@ -1,4 +1,4 @@
-import type { GearStatusResponse } from "../../../types";
+import type { GearStatusResponse } from "../../../../types";
 
 type ReservistGearHoldingsProps = {
   holdings: GearStatusResponse["holdings"];

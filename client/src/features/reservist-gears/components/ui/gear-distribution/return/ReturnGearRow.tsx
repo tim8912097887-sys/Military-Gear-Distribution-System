@@ -2,7 +2,7 @@ import type {
   HeldBulkView,
   HeldSerializedView,
   ReturnCondition,
-} from "../../../types";
+} from "../../../../types";
 
 type ReturnGearRowProps = {
   holding: HeldBulkView | HeldSerializedView;

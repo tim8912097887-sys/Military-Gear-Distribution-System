@@ -1,6 +1,6 @@
 import { useParams } from "react-router";
 import { reservistIdSchema } from "../../../common/schema/reservist-id";
-import ReservistGearDistributionContent from "../components/ui/ReservistGearDistributionContent";
+import ReservistGearDistributionContent from "../components/ui/gear-distribution/ReservistGearDistributionContent";
 import ReservistGearPageInvalidId from "../components/error/ReservistGearPageInvalidId";
 import PageContainer from "../../../common/components/pages/PageContainer";
 import { useGetGearForReservist } from "../hooks/useGetGearForReservist";

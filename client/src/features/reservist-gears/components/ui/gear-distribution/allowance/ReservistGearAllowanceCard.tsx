@@ -1,4 +1,4 @@
-import type { GearAllowanceView } from "../../../types";
+import type { GearAllowanceView } from "../../../../types";
 
 const ReservistGearAllowanceCard = ({
   allowance,

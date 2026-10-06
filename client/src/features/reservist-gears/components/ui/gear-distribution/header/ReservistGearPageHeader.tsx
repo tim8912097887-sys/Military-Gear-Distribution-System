@@ -1,4 +1,4 @@
-import type { GearStatusResponse } from "../../../types";
+import type { GearStatusResponse } from "../../../../types";
 
 type ReservistGearPageHeaderProps = {
   reservist: GearStatusResponse["reservist"];
