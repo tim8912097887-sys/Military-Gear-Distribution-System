@@ -1,13 +1,13 @@
-import IssueGearPanel from "./issue/IssueGearPanel";
-import ReservistGearAllowance from "./allowance/ReservistGearAllowance";
-import ReservistGearHoldings from "./holding/ReservistGearHoldings";
-import ReservistGearPageHeader from "./header/ReservistGearPageHeader";
-import ReturnGearPanel from "./return/ReturnGearPanel";
 import type {
   GearStatusResponse,
   IssueGearInput,
   ReturnGearInput,
-} from "../../types";
+} from "../../../types";
+import ReservistGearAllowance from "./allowance/ReservistGearAllowance";
+import ReservistGearPageHeader from "./header/ReservistGearPageHeader";
+import ReservistGearHoldings from "./holding/ReservistGearHoldings";
+import IssueGearPanel from "./issue/IssueGearPanel";
+import ReturnGearPanel from "./return/ReturnGearPanel";
 
 type ReservistGearDistributionContentProps = {
   gear: GearStatusResponse;

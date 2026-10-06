@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { GearStatusResponse, IssueGearInput } from "../../../types";
+import type { GearStatusResponse, IssueGearInput } from "../../../../types";
 import IssueGearRow from "./IssueGearRow";
 
 type IssueGearPanelProps = {

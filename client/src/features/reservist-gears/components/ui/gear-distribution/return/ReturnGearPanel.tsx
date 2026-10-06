@@ -3,7 +3,7 @@ import type {
   GearStatusResponse,
   ReturnCondition,
   ReturnGearInput,
-} from "../../../types";
+} from "../../../../types";
 import ReturnGearRow from "./ReturnGearRow";
 
 type ReturnGearPanelProps = {
