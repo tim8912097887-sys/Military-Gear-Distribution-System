@@ -1,6 +1,11 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "success" | "disabled";
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "success"
+  | "disabled"
+  | "unstyled";
 
 type ButtonSize = "sm" | "md";
 
@@ -44,6 +49,8 @@ const variantClasses: Record<ButtonVariant, string> = {
     text-slate-400
     cursor-not-allowed
   `,
+
+  unstyled: "",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -67,19 +74,23 @@ const Button = ({
     <button
       type="button"
       disabled={isDisabled}
-      className={`
-        inline-flex items-center justify-center gap-2
-        rounded-lg
-        font-semibold
-        transition
-        focus:outline-none
-        focus:ring-2
-        disabled:cursor-not-allowed
-        disabled:opacity-50
-        ${variantClasses[variant]}
-        ${sizeClasses[size]}
-        ${className}
-      `}
+      className={
+        variant === "unstyled"
+          ? className
+          : `
+              inline-flex items-center justify-center gap-2
+              rounded-lg
+              font-semibold
+              transition
+              focus:outline-none
+              focus:ring-2
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+              ${variantClasses[variant]}
+              ${sizeClasses[size]}
+              ${className}
+            `
+      }
       {...props}
     >
       {loading && (

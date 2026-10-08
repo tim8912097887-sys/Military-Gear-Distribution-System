@@ -1,3 +1,5 @@
+import Button from "../../../../../common/components/ui/common/Button";
+
 type Props = {
   currentPage: number;
   total: number;
@@ -33,25 +35,27 @@ export const GearHistoryPagination = ({
       </p>
 
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
+          variant="unstyled"
           onClick={onPrevious}
           disabled={!hasPrevious || isNavigating}
           className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Previous
-        </button>
+        </Button>
 
         <span className="px-2 text-sm text-slate-500">Page {currentPage}</span>
 
-        <button
+        <Button
           type="button"
+          variant="unstyled"
           onClick={onNext}
           disabled={!hasNext || isNavigating}
           className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Next
-        </button>
+        </Button>
       </div>
     </div>
   );

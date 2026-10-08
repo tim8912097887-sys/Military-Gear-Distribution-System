@@ -1,4 +1,5 @@
 import { Search, X } from "lucide-react";
+import Button from "../../../../../common/components/ui/common/Button";
 
 type SearchBarProps = {
   value: string;
@@ -37,8 +38,9 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
       />
 
       {value && (
-        <button
+        <Button
           type="button"
+          variant="unstyled"
           aria-label="Clear search"
           onClick={() => onChange("")}
           className="
@@ -55,7 +57,7 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
           "
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       )}
     </div>
   );

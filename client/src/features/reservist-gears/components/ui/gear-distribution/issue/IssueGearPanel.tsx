@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { GearStatusResponse, IssueGearInput } from "../../../../types";
 import IssueGearRow from "./IssueGearRow";
+import Button from "../../../../../../common/components/ui/common/Button";
 
 type IssueGearPanelProps = {
   availability: GearStatusResponse["availability"];
@@ -153,8 +154,9 @@ const IssueGearPanel = ({
           {hasSelection ? "Gear selected" : "No gear selected"}
         </p>
 
-        <button
+        <Button
           type="submit"
+          variant="unstyled"
           disabled={!hasSelection || isMutating || !isCheckedIn}
           className="
             rounded-lg bg-amber-500 px-4 py-2
@@ -164,7 +166,7 @@ const IssueGearPanel = ({
           "
         >
           {isMutating ? "Issuing..." : "Issue selected"}
-        </button>
+        </Button>
       </div>
     </form>
   );
