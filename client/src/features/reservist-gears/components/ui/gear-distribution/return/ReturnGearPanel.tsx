@@ -5,6 +5,7 @@ import type {
   ReturnGearInput,
 } from "../../../../types";
 import ReturnGearRow from "./ReturnGearRow";
+import Button from "../../../../../../common/components/ui/common/Button";
 
 type ReturnGearPanelProps = {
   holdings: GearStatusResponse["holdings"];
@@ -170,8 +171,9 @@ const ReturnGearPanel = ({
           {hasSelection ? "Gear selected" : "No gear selected"}
         </p>
 
-        <button
+        <Button
           type="submit"
+          variant="unstyled"
           disabled={!hasSelection || isMutating || !isCheckedIn}
           className="
             rounded-lg bg-amber-500 px-4 py-2
@@ -181,7 +183,7 @@ const ReturnGearPanel = ({
           "
         >
           {isMutating ? "Returning..." : "Return selected"}
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -1,8 +1,11 @@
+import Button from "../../../../common/components/ui/common/Button";
+
 export function LoadMoreButtonSkeleton() {
   return (
-    <button
+    <Button
       type="button"
       disabled
+      variant="unstyled"
       className="
                 mt-4 w-full rounded-xl
                 border border-white/10
@@ -17,6 +20,6 @@ export function LoadMoreButtonSkeleton() {
               "
     >
       "Load more reservists"
-    </button>
+    </Button>
   );
 }

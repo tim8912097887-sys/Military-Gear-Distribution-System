@@ -5,6 +5,7 @@ import { ReservistCardSkeleton } from "../../skeleton/ReservistCardSkeleton";
 import type { ReservistView } from "../../../types";
 import ReservistList from "./ReservistList";
 import { SearchBar } from "./SearchBar";
+import Button from "../../../../../common/components/ui/common/Button";
 
 export type ReservistListPanelProps = {
   reservists: ReservistView[];
@@ -119,8 +120,9 @@ const ReservistListPanel = ({
 
             {/* Load more */}
             {hasNextPage && !isFetchingNextPage && !hasNextPageError && (
-              <button
+              <Button
                 type="button"
+                variant="unstyled"
                 onClick={() => fetchNextPage()}
                 disabled={isFetchingNextPage}
                 className="
@@ -142,7 +144,7 @@ const ReservistListPanel = ({
                       "
               >
                 Load more reservists
-              </button>
+              </Button>
             )}
 
             {/* End of list */}
