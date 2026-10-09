@@ -65,7 +65,16 @@ export const ReservistGearHistoryPage = () => {
     );
   })();
 
-  return <PageContainer>{content}</PageContainer>;
+  return (
+    <PageContainer
+      title="Gear Distribution History"
+      description="Review gear issuance and return records for a reservist."
+      path={`/reservists/${id}/gears/history`}
+      noIndex
+    >
+      {content}
+    </PageContainer>
+  );
 };
 
 export default ReservistGearHistoryPage;
