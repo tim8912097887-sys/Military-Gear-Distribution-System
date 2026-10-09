@@ -1,36 +1,70 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, RouterProvider } from "react-router";
 import App from "../App";
-import ReservistListPage from "../features/reservists/pages/ReservistListPage";
-import ReservistDetailPage from "../features/reservists/pages/ReservistDetailPage";
 import NotFoundPage from "../common/components/pages/NotFoundPage";
-import ReservistGearDistributionPage from "../features/reservist-gears/pages/ReservistGearDistributionPage";
-import LandingPage from "../common/components/pages/LandingPage";
-import ReservistGearHistoryPage from "../features/reservist-gears/pages/ReservistGearHistoryPage";
+import LandingPageSkeleton from "../common/components/skeleton/LandingPageSkeleton";
+import { lazy, Suspense, type JSX } from "react";
+import ReservistDetailPageSkeleton from "../features/reservists/components/skeleton/ReservistDetailPageSkeleton";
+import ReservistListPageSkeleton from "../features/reservists/components/skeleton/ReservistListPageSkeleton";
+import ReservistGearHistoryPageSkeleton from "../features/reservist-gears/components/skeleton/ReservistGearHistoryPageSkeleton";
+import ReservistGearDistributionPageSkeleton from "../features/reservist-gears/components/skeleton/ReservistGearDistributionPageSkeleton";
 
-export const router = createBrowserRouter([
+const LandingPage = lazy(
+  () => import("../common/components/pages/LandingPage"),
+);
+const ReservistListPage = lazy(
+  () => import("../features/reservists/pages/ReservistListPage"),
+);
+const ReservistDetailPage = lazy(
+  () => import("../features/reservists/pages/ReservistDetailPage"),
+);
+const ReservistGearHistoryPage = lazy(
+  () => import("../features/reservist-gears/pages/ReservistGearHistoryPage"),
+);
+const ReservistGearDistributionPage = lazy(
+  () =>
+    import("../features/reservist-gears/pages/ReservistGearDistributionPage"),
+);
+
+const pageWithSuspense = (page: JSX.Element, fallback: JSX.Element) => {
+  return <Suspense fallback={fallback}>{page}</Suspense>;
+};
+
+const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
     children: [
       {
         index: true,
-        element: <LandingPage />,
+        element: pageWithSuspense(<LandingPage />, <LandingPageSkeleton />),
       },
       {
         path: "/reservists",
-        element: <ReservistListPage />,
+        element: pageWithSuspense(
+          <ReservistListPage />,
+          <ReservistListPageSkeleton />,
+        ),
       },
       {
         path: "/reservists/:id",
-        element: <ReservistDetailPage />,
+        element: pageWithSuspense(
+          <ReservistDetailPage />,
+          <ReservistDetailPageSkeleton />,
+        ),
       },
       {
         path: "/reservists/:id/gears",
-        element: <ReservistGearDistributionPage />,
+        element: pageWithSuspense(
+          <ReservistGearDistributionPage />,
+          <ReservistGearDistributionPageSkeleton />,
+        ),
       },
       {
         path: "/reservists/:id/gears/history",
-        element: <ReservistGearHistoryPage />,
+        element: pageWithSuspense(
+          <ReservistGearHistoryPage />,
+          <ReservistGearHistoryPageSkeleton />,
+        ),
       },
     ],
   },
@@ -39,3 +73,7 @@ export const router = createBrowserRouter([
     element: <NotFoundPage />,
   },
 ]);
+
+export function AppRouter() {
+  return <RouterProvider router={router} />;
+}
