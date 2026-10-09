@@ -7,7 +7,7 @@ type HeadProps = {
   noIndex?: boolean;
 };
 
-const SITE_URL = import.meta.env.VITE_SITE_URL.replace(/\/+$/, "");
+const SITE_URL = import.meta.env.VITE_SITE_URL;
 
 const Head = ({
   title,
