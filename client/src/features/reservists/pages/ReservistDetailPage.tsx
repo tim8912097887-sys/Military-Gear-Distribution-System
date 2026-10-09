@@ -43,7 +43,12 @@ const ReservistDetailPage = () => {
   })();
 
   return (
-    <PageContainer>
+    <PageContainer
+      title="Reservist Details"
+      description="View reservist information and manage check-in status."
+      path={`/reservists/${id}`}
+      noIndex
+    >
       <BackNavigation to="/reservists" />
 
       <PageHeader

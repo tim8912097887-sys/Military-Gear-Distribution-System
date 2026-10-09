@@ -33,9 +33,29 @@ const ReservistDetailError = ({
             {message}
           </p>
           {isNotFound ? (
-            <Button variant="primary" size="sm">
-              <Link to="/reservists">Back to reservists</Link>
-            </Button>
+            <Link
+              to="/reservists"
+              className="
+            inline-flex items-center justify-center gap-2
+              rounded-lg
+              font-semibold
+              transition
+              focus:outline-none
+              focus:ring-2
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+              border border-slate-700
+            bg-slate-800
+            text-slate-100
+            hover:bg-slate-700
+            focus:ring-slate-500
+            active:bg-slate-800
+            px-4 py-2 text-sm
+
+          "
+            >
+              Back to reservists
+            </Link>
           ) : (
             <Button variant="primary" size="sm" onClick={() => onRetry()}>
               Try again

@@ -21,7 +21,12 @@ const ReservistListPage = () => {
   } = useGetReservists(debouncedSearch);
 
   return (
-    <PageContainer>
+    <PageContainer
+      title="Reservist Management"
+      description="Manage reservist records and check-in status for education recall gear distribution."
+      path="/reservists"
+      noIndex
+    >
       <ReservistListHeader />
 
       <ReservistListPanel

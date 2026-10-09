@@ -48,7 +48,12 @@ const ReservistGearDistributionPage = () => {
   })();
 
   return (
-    <PageContainer>
+    <PageContainer
+      title="Gear Distribution"
+      description="Manage gear issuance, returns, and current gear holdings for a reservist."
+      path={`/reservists/${id}/gears`}
+      noIndex
+    >
       <BackNavigation to={`/reservists/${id}`} />
       <PageHeader title="Gear Distribution" subtitle="Issue and return gear" />
       <section>{content}</section>
