@@ -5,7 +5,12 @@ import ReservistDetailSkeleton from "./ReservistDetailSkeleton";
 
 const ReservistDetailPageSkeleton = () => {
   return (
-    <PageContainer>
+    <PageContainer
+      title="Reservist Details"
+      description="View reservist information and manage check-in status."
+      path={`/reservists/skeleton`}
+      noIndex
+    >
       <BackNavigation to="/reservists" />
       <PageHeader
         title="Reservist details"

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "prepare": "husky",
+    "build:client": "pnpm --filter client run build",
     "lint:client": "pnpm --filter client run lint",
     "lint:server": "pnpm --filter server run lint",
     "test:client": "pnpm --filter client run test",

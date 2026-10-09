@@ -3,7 +3,12 @@ import { ReservistCardSkeleton } from "./ReservistCardSkeleton";
 
 const ReservistListPageSkeleton = () => {
   return (
-    <PageContainer>
+    <PageContainer
+      title="Reservist Management"
+      description="Manage reservist records and check-in status for education recall gear distribution."
+      path="/reservists"
+      noIndex
+    >
       <header className="mb-6" aria-hidden="true">
         <div className="h-4 w-28 animate-pulse rounded bg-slate-800" />
         <div className="mt-2 h-10 w-52 animate-pulse rounded bg-slate-800" />
@@ -24,7 +29,10 @@ const ReservistListPageSkeleton = () => {
             <div className="h-4 w-32 animate-pulse rounded bg-slate-800" />
             <div className="h-3 w-16 animate-pulse rounded bg-slate-800" />
           </div>
-          <div className="h-3 w-36 animate-pulse rounded bg-slate-800" aria-hidden="true" />
+          <div
+            className="h-3 w-36 animate-pulse rounded bg-slate-800"
+            aria-hidden="true"
+          />
         </div>
 
         <div className="space-y-3 px-4 pb-4 sm:px-5 sm:pb-5">
