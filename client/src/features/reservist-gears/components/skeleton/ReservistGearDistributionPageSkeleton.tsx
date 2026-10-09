@@ -5,7 +5,12 @@ import ReservistGearPageSkeleton from "./ReservistGearPageSkeleton";
 
 const ReservistGearDistributionPageSkeleton = () => {
   return (
-    <PageContainer>
+    <PageContainer
+      title="Reservist Details"
+      description="View reservist information and manage check-in status."
+      path={`/reservists/skeleton/gears`}
+      noIndex
+    >
       <BackNavigation to="/reservists" />
       <PageHeader title="Gear Distribution" subtitle="Issue and return gear" />
       <section aria-hidden="true">
