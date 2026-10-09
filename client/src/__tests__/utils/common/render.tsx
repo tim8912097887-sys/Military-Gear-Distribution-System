@@ -1,6 +1,7 @@
 import { render } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 
 interface CustomRenderOptions {
   // Path pattern defined in the actual router (e.g., "/reservists/:reservistId")
@@ -24,11 +25,13 @@ export const customRender = (
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={options.initialEntries}>
-        <Routes>
-          <Route path={options.routePath} element={ui} />
-        </Routes>
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter initialEntries={options.initialEntries}>
+          <Routes>
+            <Route path={options.routePath} element={ui} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
     </QueryClientProvider>,
   );
 };
