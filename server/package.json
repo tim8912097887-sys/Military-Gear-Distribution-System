@@ -45,11 +45,15 @@
     "redis": "^6.3.0",
     "vitest": "^5.0.1",
     "winston": "^3.19.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.6"
   },
   "pnpm": {
     "overrides": {
-      "esbuild": "^0.25.0"
+      "esbuild": "^0.25.0",
+      "source-map-js": ">=1.2.2",
+      "vite": ">=8.3.3",
+      "body-parser": ">=2.4.0",
+      "@vitest/mocker": ">=5.0.3"
     }
   }
 }
