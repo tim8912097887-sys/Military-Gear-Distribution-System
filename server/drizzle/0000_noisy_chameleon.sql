@@ -75,6 +75,20 @@ CREATE TABLE "reservist_serialized_gear" (
 	CONSTRAINT "returned_after_issued" CHECK ("reservist_serialized_gear"."returned_at" IS NULL OR "reservist_serialized_gear"."returned_at" >= "reservist_serialized_gear"."issued_at")
 );
 --> statement-breakpoint
+CREATE TABLE "inventory_logs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"inventory_item_id" uuid NOT NULL,
+	"action_type" varchar(20) NOT NULL,
+	"quantity" integer NOT NULL,
+	"perform_by" varchar(100) NOT NULL,
+	"reason" varchar(30) NOT NULL,
+	"note" varchar(500),
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "inventory_logs_action_type_check" CHECK ("inventory_logs"."action_type" IN ('INCREASE', 'DECREASE')),
+	CONSTRAINT "inventory_logs_reason_check" CHECK ("inventory_logs"."reason" IN ('RECEIVED', 'LOST', 'DAMAGED', 'COUNT_CORRECTION')),
+	CONSTRAINT "inventory_logs_quantity_positive" CHECK ("inventory_logs"."quantity" > 0)
+);
+--> statement-breakpoint
 ALTER TABLE "distribution_logs" ADD CONSTRAINT "distribution_logs_reservist_id_reservists_id_fk" FOREIGN KEY ("reservist_id") REFERENCES "public"."reservists"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "distribution_logs" ADD CONSTRAINT "distribution_logs_inventory_item_id_inventory_items_id_fk" FOREIGN KEY ("inventory_item_id") REFERENCES "public"."inventory_items"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "distribution_logs" ADD CONSTRAINT "distribution_logs_serialized_item_id_serialized_items_id_fk" FOREIGN KEY ("serialized_item_id") REFERENCES "public"."serialized_items"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
@@ -84,10 +98,11 @@ ALTER TABLE "reservist_bulk_gear" ADD CONSTRAINT "reservist_bulk_gear_reservist_
 ALTER TABLE "reservist_bulk_gear" ADD CONSTRAINT "reservist_bulk_gear_inventory_item_id_inventory_items_id_fk" FOREIGN KEY ("inventory_item_id") REFERENCES "public"."inventory_items"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reservist_serialized_gear" ADD CONSTRAINT "reservist_serialized_gear_reservist_id_reservists_id_fk" FOREIGN KEY ("reservist_id") REFERENCES "public"."reservists"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reservist_serialized_gear" ADD CONSTRAINT "reservist_serialized_gear_serialized_item_id_serialized_items_id_fk" FOREIGN KEY ("serialized_item_id") REFERENCES "public"."serialized_items"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "inventory_logs" ADD CONSTRAINT "inventory_logs_inventory_item_id_inventory_items_id_fk" FOREIGN KEY ("inventory_item_id") REFERENCES "public"."inventory_items"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "idx_distribution_logs_reservist_created" ON "distribution_logs" USING btree ("reservist_id","created_at" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "idx_serialized_category_status_size" ON "serialized_items" USING btree ("category_id","status","size");--> statement-breakpoint
 CREATE INDEX "idx_bulk_gear_reservist" ON "reservist_bulk_gear" USING btree ("reservist_id");--> statement-breakpoint
 CREATE INDEX "idx_bulk_gear_inventory_item" ON "reservist_bulk_gear" USING btree ("inventory_item_id");--> statement-breakpoint
 CREATE INDEX "idx_serialized_gear_reservist" ON "reservist_serialized_gear" USING btree ("reservist_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "uq_active_serialized_item" ON "reservist_serialized_gear" USING btree ("serialized_item_id") WHERE "reservist_serialized_gear"."returned_at" IS NULL;--> statement-breakpoint
-CREATE INDEX "idx_serialized_gear_open_by_reservist" ON "reservist_serialized_gear" USING btree ("reservist_id","serialized_item_id") WHERE "reservist_serialized_gear"."returned_at" IS NULL;
+CREATE INDEX "idx_serialized_gear_open_by_reservist" ON "reservist_serialized_gear" USING btree ("reservist_id","serialized_item_id") WHERE "reservist_serialized_gear"."returned_at" IS NULL;--> statement-breakpoint
+CREATE INDEX "idx_inventory_logs_item_created" ON "inventory_logs" USING btree ("inventory_item_id","created_at" DESC NULLS LAST);

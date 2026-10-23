@@ -1,5 +1,5 @@
 {
-  "id": "194e662e-9988-4070-ad68-c02cff07afa7",
+  "id": "f6efa002-3a0a-4f52-a8fb-e611396c2ac7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -383,35 +383,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "idx_serialized_category_status_size": {
-          "name": "idx_serialized_category_status_size",
-          "columns": [
-            {
-              "expression": "category_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "size",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "serialized_items_category_id_gear_categories_id_fk": {
           "name": "serialized_items_category_id_gear_categories_id_fk",
@@ -697,6 +669,118 @@
         "returned_after_issued": {
           "name": "returned_after_issued",
           "value": "\"reservist_serialized_gear\".\"returned_at\" IS NULL OR \"reservist_serialized_gear\".\"returned_at\" >= \"reservist_serialized_gear\".\"issued_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.inventory_logs": {
+      "name": "inventory_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "inventory_item_id": {
+          "name": "inventory_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action_type": {
+          "name": "action_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "perform_by": {
+          "name": "perform_by",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_inventory_logs_item_created": {
+          "name": "idx_inventory_logs_item_created",
+          "columns": [
+            {
+              "expression": "inventory_item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "inventory_logs_inventory_item_id_inventory_items_id_fk": {
+          "name": "inventory_logs_inventory_item_id_inventory_items_id_fk",
+          "tableFrom": "inventory_logs",
+          "tableTo": "inventory_items",
+          "columnsFrom": [
+            "inventory_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "inventory_logs_action_type_check": {
+          "name": "inventory_logs_action_type_check",
+          "value": "\"inventory_logs\".\"action_type\" IN ('INCREASE', 'DECREASE')"
+        },
+        "inventory_logs_reason_check": {
+          "name": "inventory_logs_reason_check",
+          "value": "\"inventory_logs\".\"reason\" IN ('RECEIVED', 'LOST', 'DAMAGED', 'COUNT_CORRECTION')"
+        },
+        "inventory_logs_quantity_positive": {
+          "name": "inventory_logs_quantity_positive",
+          "value": "\"inventory_logs\".\"quantity\" > 0"
         }
       },
       "isRLSEnabled": false

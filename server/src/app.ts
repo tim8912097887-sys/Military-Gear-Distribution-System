@@ -8,6 +8,7 @@ import { SUCCESS_STATUS } from './utils/response/constants.js';
 import { successResponse } from './utils/response/success.js';
 import { reservistRouter } from './domains/reservists/container/container.js';
 import { gearRouter } from './domains/gears/container/container.js';
+import { inventoryRouter } from './domains/inventories/container/container.js';
 
 export const initializeApp = (): express.Application => {
   const app = express();
@@ -33,6 +34,7 @@ export const initializeApp = (): express.Application => {
   const v1Router = Router();
   v1Router.use('/reservists', reservistRouter);
   v1Router.use('/reservists/:reservistId/gears', gearRouter);
+  v1Router.use('/inventories', inventoryRouter);
   app.use('/api/v1', v1Router);
 
   // Error Handler
